@@ -1,0 +1,1555 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#e7ede9" />
+    <title>Fjordhunt</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600&family=Inter:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      :root {
+        --paper: #e7ede9;
+        --paper-2: #d6e0dc;
+        --ink: #0f2233;
+        --depth: #1e4b6b;
+        --buoy: #d8402a;
+        --brass: #a9761f;
+        --font-display: "Oswald", "Arial Narrow", sans-serif;
+        --font-body: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+        --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+      }
+      * {
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        min-height: 100%;
+      }
+      body {
+        background: var(--paper);
+        color: var(--ink);
+        font-family: var(--font-body);
+        font-size: 16px;
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+        overscroll-behavior: none;
+      }
+      .shell {
+        width: min(560px, 100%);
+        margin: 0 auto;
+        padding: 24px 20px 48px;
+      }
+      .eyebrow {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--depth);
+        margin: 0 0 6px;
+      }
+      h1 {
+        font-family: var(--font-display);
+        font-weight: 600;
+        font-size: clamp(34px, 11vw, 52px);
+        line-height: 0.95;
+        text-transform: uppercase;
+        margin: 0 0 6px;
+      }
+      .sub,
+      .coord {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--depth);
+        margin: 0;
+      }
+      .rule {
+        height: 1px;
+        background: var(--ink);
+        opacity: 0.25;
+        margin: 22px 0;
+      }
+      .stops {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+      .stop {
+        display: flex;
+        gap: 16px;
+        align-items: flex-start;
+        padding: 18px 0;
+        border-top: 1px solid rgba(15, 34, 51, 0.18);
+        text-decoration: none;
+        color: inherit;
+      }
+      .stops li:last-child .stop {
+        border-bottom: 1px solid rgba(15, 34, 51, 0.18);
+      }
+      .ring {
+        flex: 0 0 auto;
+        width: 46px;
+        height: 46px;
+        position: relative;
+      }
+      .ring svg {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+      .ring .num {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        font-family: var(--font-mono);
+        font-size: 14px;
+        font-weight: 600;
+      }
+      .stop-body {
+        min-width: 0;
+        flex: 1;
+      }
+      .stop-name {
+        font-family: var(--font-display);
+        font-size: 20px;
+        text-transform: uppercase;
+        line-height: 1.1;
+      }
+      .stop-meta {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        margin-top: 4px;
+      }
+      .stop-clue {
+        margin-top: 8px;
+        font-size: 15px;
+        color: rgba(15, 34, 51, 0.85);
+      }
+      .is-locked {
+        opacity: 0.42;
+      }
+      .is-current .stop-name,
+      .is-current .stop-meta {
+        color: var(--buoy);
+      }
+      .is-done .stop-meta {
+        color: var(--brass);
+      }
+      .is-current .ring {
+        animation: buoy 2.4s ease-in-out infinite;
+      }
+      @keyframes buoy {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.45;
+        }
+      }
+      .btn {
+        display: block;
+        width: 100%;
+        padding: 17px 20px;
+        border: none;
+        border-radius: 2px;
+        background: var(--ink);
+        color: var(--paper);
+        font-family: var(--font-display);
+        font-size: 18px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        text-align: center;
+        text-decoration: none;
+        cursor: pointer;
+      }
+      .btn--go {
+        background: var(--buoy);
+      }
+      .btn--quiet {
+        background: none;
+        color: var(--depth);
+        border: 1px solid rgba(15, 34, 51, 0.3);
+      }
+      .btn:active {
+        transform: translateY(1px);
+      }
+      .btn:focus-visible,
+      a:focus-visible {
+        outline: 3px solid var(--brass);
+        outline-offset: 2px;
+      }
+      .btn[disabled] {
+        opacity: 0.4;
+        pointer-events: none;
+      }
+      .btn + .btn {
+        margin-top: 10px;
+      }
+      .status {
+        padding: 14px 16px;
+        border: 1px solid rgba(15, 34, 51, 0.2);
+        border-left: 3px solid var(--depth);
+        background: var(--paper-2);
+        font-size: 15px;
+      }
+      .status--go {
+        border-left-color: var(--buoy);
+      }
+      .foot {
+        margin-top: 32px;
+        font-family: var(--font-mono);
+        font-size: 11px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: rgba(15, 34, 51, 0.5);
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .foot button {
+        background: none;
+        border: none;
+        padding: 0;
+        font: inherit;
+        color: inherit;
+        text-decoration: underline;
+        cursor: pointer;
+      }
+      .devbar {
+        background: var(--brass);
+        color: #fff;
+        font-family: var(--font-mono);
+        font-size: 11px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        text-align: center;
+        padding: 7px 10px;
+      }
+      .devbar button {
+        background: none;
+        border: none;
+        color: #fff;
+        text-decoration: underline;
+        font: inherit;
+        cursor: pointer;
+      }
+      /* AR */
+      #ar {
+        position: fixed;
+        inset: 0;
+        background: var(--ink);
+        display: none;
+        z-index: 50;
+      }
+      #ar.is-live {
+        display: block;
+      }
+      #ar canvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+      .hud {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        padding: 20px;
+        padding-bottom: calc(20px + env(safe-area-inset-bottom));
+        background: linear-gradient(transparent, rgba(15, 34, 51, 0.9) 40%);
+      }
+      .readout {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--paper);
+        text-align: center;
+        margin-bottom: 12px;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+      }
+      /* games */
+      .game-head {
+        padding: 14px 20px;
+        border-bottom: 1px solid rgba(15, 34, 51, 0.2);
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 12px;
+      }
+      .game-head .title {
+        font-family: var(--font-display);
+        text-transform: uppercase;
+        font-size: 17px;
+      }
+      .game-head .score {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--depth);
+      }
+      .game-stage {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+      }
+      .game-stage canvas {
+        background: var(--paper-2);
+        border: 1px solid rgba(15, 34, 51, 0.25);
+        touch-action: none;
+        max-width: 100%;
+      }
+      .mem-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        width: 100%;
+        max-width: 340px;
+      }
+      .card {
+        aspect-ratio: 3 / 4;
+        border: 1px solid rgba(15, 34, 51, 0.3);
+        border-radius: 2px;
+        background: var(--ink);
+        color: transparent;
+        font-size: 30px;
+        display: grid;
+        place-items: center;
+        cursor: pointer;
+        transition: background 0.18s, color 0.18s;
+      }
+      .card.is-up {
+        background: var(--paper-2);
+        color: var(--ink);
+      }
+      .card.is-matched {
+        background: var(--paper-2);
+        color: var(--ink);
+        border-color: var(--brass);
+        opacity: 0.55;
+      }
+      .pad {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+        width: 100%;
+        max-width: 340px;
+        margin-top: 14px;
+      }
+      .pad button {
+        padding: 16px 0;
+        font-size: 20px;
+        border: 1px solid rgba(15, 34, 51, 0.3);
+        background: var(--paper-2);
+        color: var(--ink);
+        border-radius: 2px;
+        cursor: pointer;
+      }
+      .pad button:active {
+        background: var(--ink);
+        color: var(--paper);
+      }
+      .hint {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--depth);
+        margin-top: 14px;
+        text-align: center;
+      }
+      #boot {
+        padding: 24px 20px;
+        font-family: var(--font-mono);
+        font-size: 13px;
+        color: var(--buoy);
+      }
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          animation: none !important;
+          transition: none !important;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="devbar"></div>
+    <div id="app">
+      <div id="boot">Loading&hellip;</div>
+    </div>
+
+    <div id="ar">
+      <canvas id="cv"></canvas>
+      <div class="hud">
+        <div class="readout" id="readout">Finding you&hellip;</div>
+        <button class="btn btn--go" id="playBtn" type="button" disabled>
+          Get closer
+        </button>
+        <button class="btn btn--quiet" id="backBtn" type="button" style="margin-top:10px">
+          Give up for now
+        </button>
+      </div>
+    </div>
+
+    <video id="vid" playsinline muted style="display: none"></video>
+
+    <script>
+      /* =========================================================
+         ===============  YOUR HUNT — EDIT THIS  =================
+         =========================================================
+
+         Coordinates: open Google Maps, right-click the exact spot,
+         click the numbers at the top of the menu to copy them.
+         First number is lat, second is lng.
+
+         game: "memory" | "breakout" | "tetris"
+         radius: metres the player must be within
+      */
+
+      var HUNT = {
+        name: "Fjordhunt",
+        subtitle: "Oslo \u00b7 three stops",
+        finale:
+          "You found all three. Show this screen at the meeting point to claim the prize.",
+
+        stops: [
+          {
+            name: "The Old Landing",
+            lat: 59.92056,
+            lng: 10.63167,
+            radius: 30,
+            clue: "Start at the water. Look for the stone steps going down.",
+            game: "memory",
+            symbols: ["\u2693", "\ud83e\udded", "\ud83d\udd6f", "\ud83e\udd89", "\ud83d\udd11", "\u26f5"]
+          },
+          {
+            name: "The Palace Road",
+            lat: 59.912844,
+            lng: 10.6472,
+            radius: 30,
+            clue: "Head southeast, away from the water, until the trees line up on both sides. About fifteen minutes.",
+            game: "breakout",
+            rows: 4
+          },
+          {
+            name: "The Last Marker",
+            lat: 59.917304,
+            lng: 10.66366,
+            radius: 30,
+            clue: "Turn east and keep going, slightly uphill, until the path opens onto open ground. Another fifteen minutes.",
+            game: "tetris",
+            lines: 4
+          }
+        ]
+      };
+
+      /* =========================================================
+         =========  ENGINE — you should not need to edit  ========
+         ========================================================= */
+
+      (function () {
+        "use strict";
+
+        var KEY = "fjordhunt.progress.v1";
+        var DEVKEY = "fjordhunt.dev";
+
+        /* ---------- storage ---------- */
+        function load() {
+          try {
+            var p = JSON.parse(localStorage.getItem(KEY));
+            if (p && Object.prototype.toString.call(p.done) === "[object Array]")
+              return p;
+          } catch (e) {}
+          return { done: [] };
+        }
+        function save(p) {
+          try {
+            localStorage.setItem(KEY, JSON.stringify(p));
+          } catch (e) {}
+        }
+        function isDone(i) {
+          return load().done.indexOf(i) > -1;
+        }
+        function complete(i) {
+          var p = load();
+          if (p.done.indexOf(i) < 0) p.done.push(i);
+          p.updated = Date.now();
+          save(p);
+        }
+        function resetAll() {
+          try {
+            localStorage.removeItem(KEY);
+          } catch (e) {}
+        }
+        function currentIndex() {
+          var p = load();
+          for (var i = 0; i < HUNT.stops.length; i++)
+            if (p.done.indexOf(i) < 0) return i;
+          return -1;
+        }
+
+        function devOn() {
+          try {
+            return localStorage.getItem(DEVKEY) === "1";
+          } catch (e) {
+            return false;
+          }
+        }
+        function setDev(on) {
+          try {
+            if (on) localStorage.setItem(DEVKEY, "1");
+            else localStorage.removeItem(DEVKEY);
+          } catch (e) {}
+        }
+
+        function param(name) {
+          var m = new RegExp("[?&]" + name + "=([^&#]*)").exec(location.search);
+          return m ? decodeURIComponent(m[1]) : null;
+        }
+        if (param("dev") === "1") setDev(true);
+        if (param("dev") === "0") setDev(false);
+
+        /* ---------- geo ---------- */
+        function toRad(d) {
+          return (d * Math.PI) / 180;
+        }
+        function distance(la1, ln1, la2, ln2) {
+          var R = 6371000,
+            dLa = toRad(la2 - la1),
+            dLn = toRad(ln2 - ln1);
+          var a =
+            Math.sin(dLa / 2) * Math.sin(dLa / 2) +
+            Math.cos(toRad(la1)) *
+              Math.cos(toRad(la2)) *
+              Math.sin(dLn / 2) *
+              Math.sin(dLn / 2);
+          return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        }
+        function bearing(la1, ln1, la2, ln2) {
+          var y = Math.sin(toRad(ln2 - ln1)) * Math.cos(toRad(la2));
+          var x =
+            Math.cos(toRad(la1)) * Math.sin(toRad(la2)) -
+            Math.sin(toRad(la1)) *
+              Math.cos(toRad(la2)) *
+              Math.cos(toRad(ln2 - ln1));
+          return (((Math.atan2(y, x) * 180) / Math.PI) + 360) % 360;
+        }
+        function angleDelta(a, b) {
+          return ((((b - a) % 360) + 540) % 360) - 180;
+        }
+        function fmt(m) {
+          return m < 1000 ? Math.round(m) + " m" : (m / 1000).toFixed(1) + " km";
+        }
+
+        /* ---------- dom helpers ---------- */
+        var app = document.getElementById("app");
+        var arEl = document.getElementById("ar");
+        var cv = document.getElementById("cv");
+        var vid = document.getElementById("vid");
+        var readout = document.getElementById("readout");
+        var playBtn = document.getElementById("playBtn");
+        var backBtn = document.getElementById("backBtn");
+        var ctx = cv.getContext("2d");
+
+        function esc(s) {
+          return String(s).replace(/[&<>"]/g, function (c) {
+            return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
+          });
+        }
+        function go(hash) {
+          location.hash = hash;
+        }
+
+        /* ---------- teardown between views ---------- */
+        var cleanup = [];
+        function onLeave(fn) {
+          cleanup.push(fn);
+        }
+        function teardown() {
+          while (cleanup.length) {
+            try {
+              cleanup.pop()();
+            } catch (e) {}
+          }
+          arEl.classList.remove("is-live");
+        }
+
+        /* =========================================================
+           GAMES
+           ========================================================= */
+        var GAMES = {};
+
+        GAMES.memory = {
+          label: "Match the pairs",
+          mount: function (stage, stop, api) {
+            var syms = (
+              stop.symbols && stop.symbols.length
+                ? stop.symbols
+                : ["\u2693", "\ud83e\udded", "\ud83d\udd6f", "\ud83e\udd89", "\ud83d\udd11", "\u26f5"]
+            ).slice(0, 6);
+
+            var deck = syms.concat(syms);
+            for (var i = deck.length - 1; i > 0; i--) {
+              var j = Math.floor(Math.random() * (i + 1)),
+                t = deck[i];
+              deck[i] = deck[j];
+              deck[j] = t;
+            }
+
+            var grid = document.createElement("div");
+            grid.className = "mem-grid";
+            stage.appendChild(grid);
+            var hint = document.createElement("p");
+            hint.className = "hint";
+            hint.textContent = "Tap two cards";
+            stage.appendChild(hint);
+
+            var first = null,
+              busy = false,
+              matched = 0,
+              moves = 0;
+            api.score("0 moves");
+
+            deck.forEach(function (sym) {
+              var card = document.createElement("button");
+              card.className = "card";
+              card.type = "button";
+              card.textContent = sym;
+              card.setAttribute("data-sym", sym);
+              card.addEventListener("click", function () {
+                if (busy || card.className.indexOf("is-up") > -1) return;
+                if (card.className.indexOf("is-matched") > -1) return;
+                card.className = "card is-up";
+                if (!first) {
+                  first = card;
+                  return;
+                }
+                moves++;
+                api.score(moves + (moves === 1 ? " move" : " moves"));
+                if (
+                  first.getAttribute("data-sym") === card.getAttribute("data-sym")
+                ) {
+                  first.className = "card is-matched";
+                  card.className = "card is-matched";
+                  first = null;
+                  matched++;
+                  if (matched === syms.length) {
+                    hint.textContent = "All pairs found";
+                    setTimeout(api.win, 450);
+                  }
+                } else {
+                  busy = true;
+                  var a = first,
+                    b = card;
+                  first = null;
+                  setTimeout(function () {
+                    a.className = "card";
+                    b.className = "card";
+                    busy = false;
+                  }, 700);
+                }
+              });
+              grid.appendChild(card);
+            });
+
+            return function () {};
+          }
+        };
+
+        GAMES.breakout = {
+          label: "Clear the bricks",
+          mount: function (stage, stop, api) {
+            var W = 320,
+              H = 440;
+            var c = document.createElement("canvas");
+            c.width = W;
+            c.height = H;
+            c.style.width = "min(320px, 92vw)";
+            stage.appendChild(c);
+            var hint = document.createElement("p");
+            hint.className = "hint";
+            hint.textContent = "Drag to move \u00b7 tap to launch";
+            stage.appendChild(hint);
+            var g = c.getContext("2d");
+
+            var COLS = 7,
+              ROWS = Math.max(2, Math.min(6, stop.rows || 4)),
+              PAD = 6;
+            var BW = (W - PAD * (COLS + 1)) / COLS,
+              BH = 16;
+            var bricks = [];
+            for (var r = 0; r < ROWS; r++)
+              for (var cc = 0; cc < COLS; cc++)
+                bricks.push({
+                  x: PAD + cc * (BW + PAD),
+                  y: 60 + r * (BH + PAD),
+                  alive: true,
+                  row: r
+                });
+
+            var paddle = { w: 74, h: 11, x: W / 2 - 37, y: H - 34 };
+            var ball = { x: W / 2, y: paddle.y - 8, r: 6, vx: 0, vy: 0 };
+            var lives = 3,
+              stuck = true,
+              running = true,
+              alive = bricks.length;
+
+            function sc() {
+              api.score(alive + " left \u00b7 " + lives + " lives");
+            }
+            sc();
+
+            function moveTo(clientX) {
+              var rect = c.getBoundingClientRect();
+              var x = ((clientX - rect.left) / rect.width) * W;
+              paddle.x = Math.max(0, Math.min(W - paddle.w, x - paddle.w / 2));
+            }
+            function down(e) {
+              e.preventDefault();
+              var p = e.touches ? e.touches[0] : e;
+              moveTo(p.clientX);
+              if (stuck) {
+                stuck = false;
+                ball.vx = (Math.random() > 0.5 ? 1 : -1) * 2.4;
+                ball.vy = -4.2;
+              }
+            }
+            function move(e) {
+              var p = e.touches ? e.touches[0] : e;
+              if (!p) return;
+              e.preventDefault();
+              moveTo(p.clientX);
+            }
+            c.addEventListener("touchstart", down, { passive: false });
+            c.addEventListener("touchmove", move, { passive: false });
+            c.addEventListener("mousedown", down);
+            c.addEventListener("mousemove", function (e) {
+              if (e.buttons) move(e);
+            });
+
+            function step() {
+              if (stuck) {
+                ball.x = paddle.x + paddle.w / 2;
+                ball.y = paddle.y - 8;
+                return;
+              }
+              ball.x += ball.vx;
+              ball.y += ball.vy;
+              if (ball.x - ball.r < 0) {
+                ball.x = ball.r;
+                ball.vx *= -1;
+              }
+              if (ball.x + ball.r > W) {
+                ball.x = W - ball.r;
+                ball.vx *= -1;
+              }
+              if (ball.y - ball.r < 0) {
+                ball.y = ball.r;
+                ball.vy *= -1;
+              }
+              if (
+                ball.vy > 0 &&
+                ball.y + ball.r >= paddle.y &&
+                ball.y - ball.r <= paddle.y + paddle.h &&
+                ball.x >= paddle.x - 4 &&
+                ball.x <= paddle.x + paddle.w + 4
+              ) {
+                ball.y = paddle.y - ball.r;
+                var hit = (ball.x - (paddle.x + paddle.w / 2)) / (paddle.w / 2);
+                ball.vx = hit * 4.2;
+                ball.vy = -Math.max(3.2, Math.abs(ball.vy));
+              }
+              for (var i = 0; i < bricks.length; i++) {
+                var b = bricks[i];
+                if (!b.alive) continue;
+                if (
+                  ball.x + ball.r > b.x &&
+                  ball.x - ball.r < b.x + BW &&
+                  ball.y + ball.r > b.y &&
+                  ball.y - ball.r < b.y + BH
+                ) {
+                  b.alive = false;
+                  alive--;
+                  sc();
+                  var ox = Math.min(
+                    ball.x + ball.r - b.x,
+                    b.x + BW - (ball.x - ball.r)
+                  );
+                  var oy = Math.min(
+                    ball.y + ball.r - b.y,
+                    b.y + BH - (ball.y - ball.r)
+                  );
+                  if (ox < oy) ball.vx *= -1;
+                  else ball.vy *= -1;
+                  if (alive === 0) {
+                    running = false;
+                    hint.textContent = "Bricks cleared";
+                    setTimeout(api.win, 350);
+                  }
+                  break;
+                }
+              }
+              if (ball.y - ball.r > H) {
+                lives--;
+                if (lives <= 0) {
+                  lives = 3;
+                  bricks.forEach(function (b) {
+                    b.alive = true;
+                  });
+                  alive = bricks.length;
+                  hint.textContent = "Reset \u2014 try again";
+                }
+                sc();
+                stuck = true;
+              }
+            }
+
+            var rowColors = [
+              "#0f2233",
+              "#1e4b6b",
+              "#a9761f",
+              "#d8402a",
+              "#1e4b6b",
+              "#0f2233"
+            ];
+            function draw() {
+              g.fillStyle = "#d6e0dc";
+              g.fillRect(0, 0, W, H);
+              bricks.forEach(function (b) {
+                if (!b.alive) return;
+                g.fillStyle = rowColors[b.row % rowColors.length];
+                g.fillRect(b.x, b.y, BW, BH);
+              });
+              g.fillStyle = "#0f2233";
+              g.fillRect(paddle.x, paddle.y, paddle.w, paddle.h);
+              g.fillStyle = "#d8402a";
+              g.beginPath();
+              g.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
+              g.fill();
+              if (stuck) {
+                g.fillStyle = "rgba(15,34,51,0.65)";
+                g.font = "13px ui-monospace, monospace";
+                g.textAlign = "center";
+                g.fillText("TAP TO LAUNCH", W / 2, H - 70);
+              }
+            }
+
+            var raf;
+            (function loop() {
+              if (!running) return;
+              step();
+              draw();
+              raf = requestAnimationFrame(loop);
+            })();
+
+            return function () {
+              running = false;
+              cancelAnimationFrame(raf);
+            };
+          }
+        };
+
+        GAMES.tetris = {
+          label: "Clear the lines",
+          mount: function (stage, stop, api) {
+            var COLS = 10,
+              ROWS = 18,
+              CELL = 17;
+            var TARGET = Math.max(1, stop.lines || 4);
+
+            var c = document.createElement("canvas");
+            c.width = COLS * CELL;
+            c.height = ROWS * CELL;
+            c.style.width = "240px";
+            stage.appendChild(c);
+            var g = c.getContext("2d");
+
+            var pad = document.createElement("div");
+            pad.className = "pad";
+            pad.innerHTML =
+              '<button type="button" data-k="left">\u2190</button>' +
+              '<button type="button" data-k="rot">\u21bb</button>' +
+              '<button type="button" data-k="right">\u2192</button>' +
+              '<button type="button" data-k="drop">\u2193</button>';
+            stage.appendChild(pad);
+
+            var hint = document.createElement("p");
+            hint.className = "hint";
+            hint.textContent = "Clear " + TARGET + " lines";
+            stage.appendChild(hint);
+
+            var SHAPES = {
+              I: [[1, 1, 1, 1]],
+              O: [[1, 1], [1, 1]],
+              T: [[0, 1, 0], [1, 1, 1]],
+              S: [[0, 1, 1], [1, 1, 0]],
+              Z: [[1, 1, 0], [0, 1, 1]],
+              J: [[1, 0, 0], [1, 1, 1]],
+              L: [[0, 0, 1], [1, 1, 1]]
+            };
+            var KEYS = ["I", "O", "T", "S", "Z", "J", "L"];
+            var COLORS = {
+              I: "#1e4b6b",
+              O: "#a9761f",
+              T: "#d8402a",
+              S: "#0f2233",
+              Z: "#1e4b6b",
+              J: "#a9761f",
+              L: "#0f2233"
+            };
+
+            var board = [];
+            for (var r = 0; r < ROWS; r++) {
+              var row = [];
+              for (var cc = 0; cc < COLS; cc++) row.push(null);
+              board.push(row);
+            }
+
+            var piece = null,
+              lines = 0,
+              running = true,
+              acc = 0,
+              last = 0,
+              raf;
+
+            function sc() {
+              api.score(lines + " / " + TARGET + " lines");
+            }
+            sc();
+
+            function emptyRow() {
+              var a = [];
+              for (var i = 0; i < COLS; i++) a.push(null);
+              return a;
+            }
+            function collides(m, px, py) {
+              for (var r = 0; r < m.length; r++)
+                for (var c2 = 0; c2 < m[r].length; c2++) {
+                  if (!m[r][c2]) continue;
+                  var x = px + c2,
+                    y = py + r;
+                  if (x < 0 || x >= COLS || y >= ROWS) return true;
+                  if (y >= 0 && board[y][x]) return true;
+                }
+              return false;
+            }
+            function spawn() {
+              var k = KEYS[Math.floor(Math.random() * KEYS.length)];
+              var m = SHAPES[k].map(function (rw) {
+                return rw.slice();
+              });
+              piece = { k: k, m: m, x: Math.floor((COLS - m[0].length) / 2), y: 0 };
+              if (collides(piece.m, piece.x, piece.y)) {
+                for (var r = 0; r < 6; r++) board[r] = emptyRow();
+                hint.textContent = "Stack cleared \u2014 keep going";
+              }
+            }
+            function merge() {
+              for (var r = 0; r < piece.m.length; r++)
+                for (var c2 = 0; c2 < piece.m[r].length; c2++)
+                  if (piece.m[r][c2] && piece.y + r >= 0)
+                    board[piece.y + r][piece.x + c2] = piece.k;
+            }
+            function clearLines() {
+              var cleared = 0;
+              for (var r = ROWS - 1; r >= 0; r--) {
+                var full = true;
+                for (var c2 = 0; c2 < COLS; c2++)
+                  if (!board[r][c2]) {
+                    full = false;
+                    break;
+                  }
+                if (full) {
+                  board.splice(r, 1);
+                  board.unshift(emptyRow());
+                  cleared++;
+                  r++;
+                }
+              }
+              if (cleared) {
+                lines += cleared;
+                sc();
+                if (lines >= TARGET) {
+                  running = false;
+                  hint.textContent = "Target reached";
+                  setTimeout(api.win, 350);
+                }
+              }
+            }
+            function rotate() {
+              var m = piece.m,
+                out = [];
+              for (var c2 = 0; c2 < m[0].length; c2++) {
+                var rw = [];
+                for (var r = m.length - 1; r >= 0; r--) rw.push(m[r][c2]);
+                out.push(rw);
+              }
+              var kicks = [0, -1, 1, -2, 2];
+              for (var i = 0; i < kicks.length; i++)
+                if (!collides(out, piece.x + kicks[i], piece.y)) {
+                  piece.m = out;
+                  piece.x += kicks[i];
+                  return;
+                }
+            }
+            function mv(dx) {
+              if (!collides(piece.m, piece.x + dx, piece.y)) piece.x += dx;
+            }
+            function softDrop() {
+              if (!collides(piece.m, piece.x, piece.y + 1)) piece.y++;
+              else {
+                merge();
+                clearLines();
+                if (running) spawn();
+              }
+            }
+
+            pad.addEventListener("click", function (e) {
+              var k = e.target && e.target.getAttribute("data-k");
+              if (!k || !running || !piece) return;
+              if (k === "left") mv(-1);
+              else if (k === "right") mv(1);
+              else if (k === "rot") rotate();
+              else softDrop();
+              draw();
+            });
+
+            function onKey(e) {
+              if (!running || !piece) return;
+              if (e.key === "ArrowLeft") mv(-1);
+              else if (e.key === "ArrowRight") mv(1);
+              else if (e.key === "ArrowUp") rotate();
+              else if (e.key === "ArrowDown") softDrop();
+              else return;
+              e.preventDefault();
+              draw();
+            }
+            window.addEventListener("keydown", onKey);
+
+            function draw() {
+              g.fillStyle = "#d6e0dc";
+              g.fillRect(0, 0, c.width, c.height);
+              g.strokeStyle = "rgba(15,34,51,0.07)";
+              for (var i = 1; i < COLS; i++) {
+                g.beginPath();
+                g.moveTo(i * CELL, 0);
+                g.lineTo(i * CELL, c.height);
+                g.stroke();
+              }
+              for (var r = 0; r < ROWS; r++)
+                for (var c2 = 0; c2 < COLS; c2++)
+                  if (board[r][c2]) {
+                    g.fillStyle = COLORS[board[r][c2]];
+                    g.fillRect(c2 * CELL, r * CELL, CELL - 1, CELL - 1);
+                  }
+              if (piece)
+                for (var pr = 0; pr < piece.m.length; pr++)
+                  for (var pc = 0; pc < piece.m[pr].length; pc++)
+                    if (piece.m[pr][pc]) {
+                      g.fillStyle = COLORS[piece.k];
+                      g.fillRect(
+                        (piece.x + pc) * CELL,
+                        (piece.y + pr) * CELL,
+                        CELL - 1,
+                        CELL - 1
+                      );
+                    }
+            }
+
+            spawn();
+            raf = requestAnimationFrame(function loop(ts) {
+              if (!running) return;
+              if (!last) last = ts;
+              acc += ts - last;
+              last = ts;
+              if (acc > 620) {
+                acc = 0;
+                softDrop();
+              }
+              draw();
+              raf = requestAnimationFrame(loop);
+            });
+
+            return function () {
+              running = false;
+              cancelAnimationFrame(raf);
+              window.removeEventListener("keydown", onKey);
+            };
+          }
+        };
+
+        /* =========================================================
+           VIEWS
+           ========================================================= */
+
+        function renderDevbar() {
+          var bar = document.getElementById("devbar");
+          if (!devOn()) {
+            bar.className = "";
+            bar.innerHTML = "";
+            return;
+          }
+          bar.className = "devbar";
+          bar.innerHTML =
+            "Test mode: location checks skipped \u00b7 " +
+            '<button id="devoff" type="button">turn off</button>';
+          document.getElementById("devoff").addEventListener("click", function () {
+            setDev(false);
+            renderDevbar();
+            route();
+          });
+        }
+
+        function ring(state, n) {
+          var stroke =
+            state === "done" ? "#a9761f" : state === "current" ? "#d8402a" : "#0f2233";
+          var dash = state === "locked" ? ' stroke-dasharray="3 5"' : "";
+          var inner =
+            state === "done"
+              ? '<circle cx="23" cy="23" r="12" fill="#a9761f" opacity="0.18"/>'
+              : "";
+          return (
+            '<div class="ring"><svg viewBox="0 0 46 46" aria-hidden="true">' +
+            inner +
+            '<circle cx="23" cy="23" r="21" fill="none" stroke="' +
+            stroke +
+            '" stroke-width="2"' +
+            dash +
+            '/></svg><span class="num" style="color:' +
+            stroke +
+            '">' +
+            n +
+            "</span></div>"
+          );
+        }
+
+        function renderChart() {
+          var cur = currentIndex();
+          var html =
+            '<main class="shell">' +
+            '<p class="eyebrow">Chart \u00b7 ' +
+            HUNT.stops.length +
+            " stops</p>" +
+            "<h1>" +
+            esc(HUNT.name) +
+            "</h1>" +
+            '<p class="sub">' +
+            esc(HUNT.subtitle || "") +
+            "</p>" +
+            '<div class="rule"></div><ol class="stops">';
+
+          HUNT.stops.forEach(function (s, i) {
+            var done = isDone(i),
+              isCur = i === cur;
+            var state = done ? "done" : isCur ? "current" : "locked";
+            var cls =
+              "stop " + (done ? "is-done" : isCur ? "is-current" : "is-locked");
+            var open = done || isCur;
+            var body =
+              ring(state, i + 1) +
+              '<div class="stop-body"><div class="stop-name">' +
+              (open ? esc(s.name) : "\u2014\u2014\u2014") +
+              '</div><div class="stop-meta">' +
+              (done ? "Found" : isCur ? "Go here now" : "Locked") +
+              (open ? " \u00b7 " + esc(s.game) + " \u00b7 " + s.radius + " m" : "") +
+              "</div>" +
+              (isCur && s.clue ? '<p class="stop-clue">' + esc(s.clue) + "</p>" : "") +
+              "</div>";
+            html +=
+              "<li>" +
+              (open
+                ? '<a class="' + cls + '" href="#/stop/' + i + '">' + body + "</a>"
+                : '<div class="' + cls + '">' + body + "</div>") +
+              "</li>";
+          });
+
+          html += "</ol><div style='margin-top:26px'>";
+          if (cur === -1) {
+            html +=
+              '<div class="status status--go">' + esc(HUNT.finale) + "</div>";
+          } else {
+            html +=
+              '<a class="btn btn--go" href="#/stop/' +
+              cur +
+              '">' +
+              (cur === 0 ? "Begin the hunt" : "Continue to stop " + (cur + 1)) +
+              "</a>";
+          }
+          var doneCount = load().done.length;
+          html +=
+            '</div><div class="foot"><span>' +
+            doneCount +
+            " of " +
+            HUNT.stops.length +
+            ' found</span><button id="resetBtn" type="button">Start over</button></div></main>';
+
+          app.innerHTML = html;
+          document.getElementById("resetBtn").addEventListener("click", function () {
+            if (confirm("Clear your progress and start from stop 1?")) {
+              resetAll();
+              route();
+            }
+          });
+        }
+
+        function renderStop(i) {
+          var stop = HUNT.stops[i];
+          if (!stop) return go("");
+
+          app.innerHTML =
+            '<main class="shell">' +
+            '<p class="eyebrow">Stop ' +
+            (i + 1) +
+            " of " +
+            HUNT.stops.length +
+            "</p><h1>" +
+            esc(stop.name) +
+            '</h1><p class="coord">' +
+            stop.lat.toFixed(5) +
+            "\u00b0N " +
+            stop.lng.toFixed(5) +
+            "\u00b0E \u00b7 within " +
+            stop.radius +
+            ' m</p><div class="rule"></div>' +
+            '<div class="status">' +
+            esc(stop.clue || "Find the marker.") +
+            "</div>" +
+            "<p style='font-size:15px;color:#1e4b6b;margin:18px 0 22px'>The marker only appears when you are close enough. Hold the phone up and turn slowly to find it.</p>" +
+            '<button class="btn btn--go" id="openCam" type="button">Open camera</button>' +
+            '<a class="btn btn--quiet" href="#/">Back to the chart</a>' +
+            "</main>";
+
+          var heading = null,
+            pos = null,
+            dist = null,
+            inRange = false,
+            t0 = Date.now(),
+            raf = null,
+            stream = null,
+            watchId = null;
+
+          if (devOn()) {
+            dist = 0;
+            inRange = true;
+          }
+
+          function onOrient(e) {
+            if (typeof e.webkitCompassHeading === "number")
+              heading = e.webkitCompassHeading;
+            else if (typeof e.alpha === "number") heading = (360 - e.alpha) % 360;
+          }
+
+          function startOrientation() {
+            function attach() {
+              window.addEventListener("deviceorientationabsolute", onOrient, true);
+              window.addEventListener("deviceorientation", onOrient, true);
+            }
+            var DOE = window.DeviceOrientationEvent;
+            if (DOE && typeof DOE.requestPermission === "function")
+              DOE.requestPermission().then(attach).catch(attach);
+            else attach();
+          }
+
+          function startGeo() {
+            if (devOn() || !navigator.geolocation) return;
+            watchId = navigator.geolocation.watchPosition(
+              function (p) {
+                pos = {
+                  lat: p.coords.latitude,
+                  lng: p.coords.longitude,
+                  acc: p.coords.accuracy
+                };
+                dist = distance(pos.lat, pos.lng, stop.lat, stop.lng);
+                inRange = dist <= stop.radius;
+              },
+              function (err) {
+                readout.textContent =
+                  err.code === 1
+                    ? "Location blocked \u2014 allow it in Settings"
+                    : "Cannot read your location yet";
+              },
+              { enableHighAccuracy: true, maximumAge: 2000, timeout: 20000 }
+            );
+          }
+
+          function resize() {
+            var d = window.devicePixelRatio || 1;
+            cv.width = window.innerWidth * d;
+            cv.height = window.innerHeight * d;
+          }
+
+          function drawMarker(x, y, t, size) {
+            ctx.save();
+            ctx.translate(x, y + Math.sin(t / 700) * size * 0.06);
+            var gr = ctx.createRadialGradient(0, 0, size * 0.2, 0, 0, size * 1.3);
+            gr.addColorStop(0, "rgba(216,64,42,0.45)");
+            gr.addColorStop(1, "rgba(216,64,42,0)");
+            ctx.fillStyle = gr;
+            ctx.beginPath();
+            ctx.arc(0, 0, size * 1.3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.save();
+            ctx.rotate(t / 2600);
+            ctx.strokeStyle = "#a9761f";
+            ctx.lineWidth = Math.max(2, size * 0.045);
+            ctx.beginPath();
+            ctx.arc(0, 0, size, 0, Math.PI * 2);
+            ctx.stroke();
+            for (var k = 0; k < 12; k++) {
+              var a = (k / 12) * Math.PI * 2;
+              ctx.beginPath();
+              ctx.moveTo(Math.cos(a) * size * 0.86, Math.sin(a) * size * 0.86);
+              ctx.lineTo(Math.cos(a) * size * 0.98, Math.sin(a) * size * 0.98);
+              ctx.stroke();
+            }
+            ctx.restore();
+            ctx.strokeStyle = "rgba(231,237,233,0.9)";
+            ctx.lineWidth = Math.max(1.5, size * 0.03);
+            ctx.beginPath();
+            ctx.moveTo(-size * 0.55, 0);
+            ctx.lineTo(size * 0.55, 0);
+            ctx.moveTo(0, -size * 0.55);
+            ctx.lineTo(0, size * 0.55);
+            ctx.stroke();
+            ctx.fillStyle = "#d8402a";
+            ctx.beginPath();
+            ctx.moveTo(0, -size * 0.34);
+            ctx.lineTo(size * 0.34, 0);
+            ctx.lineTo(0, size * 0.34);
+            ctx.lineTo(-size * 0.34, 0);
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+          }
+
+          function drawArrow(delta) {
+            var r = Math.min(cv.width, cv.height) * 0.16;
+            ctx.save();
+            ctx.translate(cv.width / 2, cv.height / 2);
+            ctx.rotate((delta * Math.PI) / 180);
+            ctx.fillStyle = "rgba(231,237,233,0.92)";
+            ctx.strokeStyle = "rgba(15,34,51,0.6)";
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(0, -r);
+            ctx.lineTo(r * 0.6, r * 0.7);
+            ctx.lineTo(0, r * 0.35);
+            ctx.lineTo(-r * 0.6, r * 0.7);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            ctx.restore();
+          }
+
+          function hud() {
+            if (devOn()) readout.textContent = "Test mode \u00b7 marker unlocked";
+            else if (dist === null) readout.textContent = "Finding you\u2026";
+            else if (inRange) readout.textContent = "You are here \u00b7 " + fmt(dist);
+            else
+              readout.textContent =
+                fmt(dist) +
+                " to go" +
+                (pos && pos.acc > 25
+                  ? " \u00b7 weak GPS (\u00b1" + Math.round(pos.acc) + " m)"
+                  : "");
+            if (inRange && playBtn.disabled) {
+              playBtn.disabled = false;
+              playBtn.textContent = "Take the challenge";
+            } else if (!inRange && !playBtn.disabled) {
+              playBtn.disabled = true;
+              playBtn.textContent = "Get closer";
+            }
+          }
+
+          function loop() {
+            var t = Date.now() - t0;
+            ctx.clearRect(0, 0, cv.width, cv.height);
+            var vw = vid.videoWidth,
+              vh = vid.videoHeight;
+            if (vw && vh) {
+              var s = Math.max(cv.width / vw, cv.height / vh);
+              ctx.drawImage(
+                vid,
+                (cv.width - vw * s) / 2,
+                (cv.height - vh * s) / 2,
+                vw * s,
+                vh * s
+              );
+            }
+            if (inRange) {
+              var size = Math.min(cv.width, cv.height) * 0.17;
+              if (heading === null) drawMarker(cv.width / 2, cv.height * 0.45, t, size);
+              else {
+                var b = devOn()
+                  ? 0
+                  : bearing(pos.lat, pos.lng, stop.lat, stop.lng);
+                var d = angleDelta(heading, b),
+                  fov = 55;
+                if (Math.abs(d) < fov)
+                  drawMarker(
+                    cv.width / 2 + (d / fov) * (cv.width / 2),
+                    cv.height * 0.45,
+                    t,
+                    size
+                  );
+                else drawArrow(d);
+              }
+            } else if (heading !== null && pos) {
+              drawArrow(angleDelta(heading, bearing(pos.lat, pos.lng, stop.lat, stop.lng)));
+            }
+            hud();
+            raf = requestAnimationFrame(loop);
+          }
+
+          playBtn.onclick = function () {
+            go("#/game/" + i);
+          };
+          backBtn.onclick = function () {
+            go("#/");
+          };
+
+          document.getElementById("openCam").addEventListener("click", function () {
+            startOrientation();
+            startGeo();
+            navigator.mediaDevices
+              .getUserMedia({
+                video: { facingMode: { ideal: "environment" } },
+                audio: false
+              })
+              .then(function (st) {
+                stream = st;
+                vid.srcObject = st;
+                return vid.play();
+              })
+              .then(function () {
+                arEl.classList.add("is-live");
+                resize();
+                window.addEventListener("resize", resize);
+                raf = requestAnimationFrame(loop);
+              })
+              .catch(function () {
+                alert(
+                  "The camera did not open. Allow camera access for this site, then reload."
+                );
+              });
+          });
+
+          onLeave(function () {
+            if (raf) cancelAnimationFrame(raf);
+            window.removeEventListener("resize", resize);
+            window.removeEventListener("deviceorientationabsolute", onOrient, true);
+            window.removeEventListener("deviceorientation", onOrient, true);
+            if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+            if (stream)
+              stream.getTracks().forEach(function (tr) {
+                tr.stop();
+              });
+            vid.srcObject = null;
+          });
+        }
+
+        function renderGame(i) {
+          var stop = HUNT.stops[i];
+          if (!stop) return go("");
+          var game = GAMES[stop.game];
+
+          if (!game) {
+            app.innerHTML =
+              '<main class="shell"><div class="status">No game called "' +
+              esc(stop.game) +
+              '" exists. In the config at the top of this file, game must be memory, breakout or tetris.</div>' +
+              '<a class="btn btn--quiet" href="#/" style="margin-top:20px">Back</a></main>';
+            return;
+          }
+
+          app.innerHTML =
+            '<header class="game-head"><span class="title">' +
+            esc(game.label) +
+            '</span><span class="score" id="score"></span></header>' +
+            '<div class="game-stage" id="stage"></div>';
+
+          var td = null;
+          var api = {
+            score: function (t) {
+              var el = document.getElementById("score");
+              if (el) el.textContent = t;
+            },
+            win: function () {
+              if (td) td();
+              complete(i);
+              showWin();
+            }
+          };
+          td = game.mount(document.getElementById("stage"), stop, api);
+          onLeave(function () {
+            if (td) td();
+          });
+
+          function showWin() {
+            var next = currentIndex();
+            var html = '<main class="shell">';
+            if (next === -1) {
+              html +=
+                '<p class="eyebrow">Hunt complete</p><h1>All three found</h1>' +
+                '<div class="rule"></div><div class="status status--go">' +
+                esc(HUNT.finale) +
+                '</div><div style="margin-top:24px"><a class="btn btn--go" href="#/">See the chart</a></div>';
+            } else {
+              var n = HUNT.stops[next];
+              html +=
+                '<p class="eyebrow">Stop ' +
+                (i + 1) +
+                ' cleared</p><h1>' +
+                esc(stop.name) +
+                '</h1><div class="rule"></div><div class="status status--go">Next: ' +
+                esc(n.clue || n.name) +
+                '</div><div style="margin-top:24px"><a class="btn btn--go" href="#/stop/' +
+                next +
+                '">Go to stop ' +
+                (next + 1) +
+                '</a><a class="btn btn--quiet" href="#/">Back to the chart</a></div>';
+            }
+            app.innerHTML = html + "</main>";
+          }
+        }
+
+        /* ---------- router ---------- */
+        function route() {
+          teardown();
+          window.scrollTo(0, 0);
+          renderDevbar();
+          var h = location.hash.replace(/^#\/?/, "");
+          var parts = h.split("/");
+          if (parts[0] === "stop") renderStop(parseInt(parts[1], 10) || 0);
+          else if (parts[0] === "game") renderGame(parseInt(parts[1], 10) || 0);
+          else renderChart();
+        }
+
+        window.addEventListener("hashchange", route);
+        route();
+      })();
+    </script>
+  </body>
+</html>
