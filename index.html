@@ -332,20 +332,31 @@
         border: 1px solid rgba(15, 34, 51, 0.3);
         border-radius: 2px;
         background: var(--ink);
-        color: transparent;
         font-size: 30px;
         display: grid;
         place-items: center;
         cursor: pointer;
-        transition: background 0.18s, color 0.18s;
+        padding: 0;
+        touch-action: manipulation;
+        -webkit-user-select: none;
+        user-select: none;
+        transition: background 0.18s;
+      }
+      /* The face is a real element, shown and hidden with visibility.
+         Colouring text transparent does not hide emoji reliably. */
+      .card .face {
+        visibility: hidden;
+        line-height: 1;
+      }
+      .card.is-up .face,
+      .card.is-matched .face {
+        visibility: visible;
       }
       .card.is-up {
         background: var(--paper-2);
-        color: var(--ink);
       }
       .card.is-matched {
         background: var(--paper-2);
-        color: var(--ink);
         border-color: var(--brass);
         opacity: 0.55;
       }
@@ -356,6 +367,7 @@
         width: 100%;
         max-width: 340px;
         margin-top: 14px;
+        touch-action: none;
       }
       .pad button {
         padding: 16px 0;
@@ -365,6 +377,10 @@
         color: var(--ink);
         border-radius: 2px;
         cursor: pointer;
+        /* none: no double-tap zoom, no scroll hijack, no 300ms delay */
+        touch-action: none;
+        -webkit-user-select: none;
+        user-select: none;
       }
       .pad button:active {
         background: var(--ink);
@@ -442,7 +458,7 @@
             radius: 30,
             clue: "Start at the water. Look for the stone steps going down.",
             game: "memory",
-            symbols: ["\u2693", "\ud83e\udded", "\ud83d\udd6f", "\ud83e\udd89", "\ud83d\udd11", "\u26f5"]
+            symbols: ["\u2693\ufe0f", "\ud83e\udded", "\ud83d\udd6f\ufe0f", "\ud83e\udd89", "\ud83d\udd11", "\u26f5\ufe0f"]
           },
           {
             name: "The Palace Road",
@@ -607,7 +623,7 @@
             var syms = (
               stop.symbols && stop.symbols.length
                 ? stop.symbols
-                : ["\u2693", "\ud83e\udded", "\ud83d\udd6f", "\ud83e\udd89", "\ud83d\udd11", "\u26f5"]
+                : ["\u2693\ufe0f", "\ud83e\udded", "\ud83d\udd6f\ufe0f", "\ud83e\udd89", "\ud83d\udd11", "\u26f5\ufe0f"]
             ).slice(0, 6);
 
             var deck = syms.concat(syms);
@@ -636,8 +652,12 @@
               var card = document.createElement("button");
               card.className = "card";
               card.type = "button";
-              card.textContent = sym;
+              var face = document.createElement("span");
+              face.className = "face";
+              face.textContent = sym;
+              card.appendChild(face);
               card.setAttribute("data-sym", sym);
+              card.setAttribute("aria-label", "Face-down card");
               card.addEventListener("click", function () {
                 if (busy || card.className.indexOf("is-up") > -1) return;
                 if (card.className.indexOf("is-matched") > -1) return;
@@ -1026,14 +1046,34 @@
               }
             }
 
-            pad.addEventListener("click", function (e) {
-              var k = e.target && e.target.getAttribute("data-k");
+            function padAction(k) {
               if (!k || !running || !piece) return;
               if (k === "left") mv(-1);
               else if (k === "right") mv(1);
               else if (k === "rot") rotate();
-              else softDrop();
+              else if (k === "drop") softDrop();
+              else return;
               draw();
+            }
+
+            /* Handling touchstart and calling preventDefault stops iOS from
+               treating two quick taps as a zoom gesture. The click listener
+               is kept for desktop, and skipped once touch has been seen. */
+            var usedTouch = false;
+            pad.addEventListener(
+              "touchstart",
+              function (e) {
+                var k = e.target && e.target.getAttribute("data-k");
+                if (!k) return;
+                usedTouch = true;
+                e.preventDefault();
+                padAction(k);
+              },
+              { passive: false }
+            );
+            pad.addEventListener("click", function (e) {
+              if (usedTouch) return;
+              padAction(e.target && e.target.getAttribute("data-k"));
             });
 
             function onKey(e) {
