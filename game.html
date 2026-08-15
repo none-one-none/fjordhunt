@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#e7ede9" />
+    <title>Challenge</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600&family=Inter:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/app.css" />
+  </head>
+  <body>
+    <div class="game-wrap">
+      <header class="game-head">
+        <span class="title" id="gameTitle">Challenge</span>
+        <span class="score" id="score"></span>
+      </header>
+      <div class="game-stage" id="stage"></div>
+    </div>
+
+    <div class="win" id="win">
+      <div class="inner">
+        <p class="eyebrow" id="winEyebrow">Stop cleared</p>
+        <h1 id="winTitle">Found it</h1>
+        <div class="rule"></div>
+        <div class="status status--go" id="winBody"></div>
+        <div style="margin-top: 24px">
+          <a class="btn btn--go" id="winNext" href="index.html">Next stop</a>
+          <a class="btn btn--quiet" href="index.html">Back to the chart</a>
+        </div>
+      </div>
+    </div>
+
+    <script src="hunt.config.js"></script>
+    <script src="js/core.js"></script>
+    <script src="js/games/memory.js"></script>
+    <script src="js/games/breakout.js"></script>
+    <script src="js/games/tetris.js"></script>
+    <script>
+      (function () {
+        var i = parseInt(Hunt.param("i") || "0", 10);
+        var stop = Hunt.stopAt(i);
+        if (!stop) {
+          location.replace("index.html");
+          return;
+        }
+
+        var game = window.GAMES[stop.game];
+        if (!game) {
+          document.getElementById("stage").innerHTML =
+            '<div class="status">No game called "' +
+            stop.game +
+            '" exists. Check hunt.config.js \u2014 it must be memory, breakout or tetris.</div>';
+          return;
+        }
+
+        document.getElementById("gameTitle").textContent = game.label;
+        document.title = stop.name;
+
+        var teardown = null;
+
+        var api = {
+          score: function (text) {
+            document.getElementById("score").textContent = text;
+          },
+          win: function () {
+            if (teardown) teardown();
+            Hunt.complete(i);
+            showWin();
+          },
+        };
+
+        teardown = game.mount(document.getElementById("stage"), stop, api);
+
+        function showWin() {
+          var next = Hunt.currentIndex();
+          var winEl = document.getElementById("win");
+
+          if (next === -1) {
+            document.getElementById("winEyebrow").textContent = "Hunt complete";
+            document.getElementById("winTitle").textContent = "All three found";
+            document.getElementById("winBody").textContent =
+              Hunt.config().finale || "You finished the hunt.";
+            document.getElementById("winNext").textContent = "See the chart";
+            document.getElementById("winNext").href = "index.html";
+          } else {
+            var n = Hunt.stopAt(next);
+            document.getElementById("winEyebrow").textContent =
+              "Stop " + (i + 1) + " cleared";
+            document.getElementById("winTitle").textContent = stop.name;
+            document.getElementById("winBody").textContent =
+              "Next: " + (n.clue || n.name);
+            document.getElementById("winNext").textContent =
+              "Go to stop " + (next + 1);
+            document.getElementById("winNext").href = "stop.html?i=" + next;
+          }
+
+          winEl.classList.add("is-open");
+        }
+      })();
+    </script>
+  </body>
+</html>

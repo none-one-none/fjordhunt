@@ -1,0 +1,481 @@
+/* Fjordhunt — nautical chart palette, built to survive daylight on a phone */
+
+:root {
+  --paper: #e7ede9;
+  --paper-2: #d6e0dc;
+  --ink: #0f2233;
+  --depth: #1e4b6b;
+  --buoy: #d8402a;
+  --brass: #a9761f;
+
+  --shell: min(560px, 100%);
+  --font-display: "Oswald", "Haettenschweiler", "Arial Narrow", sans-serif;
+  --font-body: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Menlo", monospace;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
+  overscroll-behavior: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+.shell {
+  width: var(--shell);
+  margin: 0 auto;
+  padding: 24px 20px 48px;
+}
+
+/* ---------- type ---------- */
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--depth);
+  margin: 0 0 6px;
+}
+
+h1 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(34px, 11vw, 52px);
+  line-height: 0.95;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  margin: 0 0 6px;
+}
+
+h2 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 22px;
+  line-height: 1.1;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  margin: 0;
+}
+
+.sub {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--depth);
+  margin: 0;
+}
+
+.coord {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--depth);
+  letter-spacing: 0.02em;
+}
+
+/* ---------- chart rule: the horizontal divider is a depth sounding line ---------- */
+
+.rule {
+  height: 1px;
+  background: var(--ink);
+  opacity: 0.25;
+  margin: 22px 0;
+}
+
+/* ---------- stop cards ---------- */
+
+.stops {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.stop {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  padding: 18px 0;
+  border-top: 1px solid rgba(15, 34, 51, 0.18);
+  text-decoration: none;
+  color: inherit;
+}
+
+.stop:last-child {
+  border-bottom: 1px solid rgba(15, 34, 51, 0.18);
+}
+
+/* the ring is the signature: a depth contour that fills as you progress */
+.ring {
+  flex: 0 0 auto;
+  width: 46px;
+  height: 46px;
+  position: relative;
+}
+
+.ring svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.ring .num {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.stop-body {
+  min-width: 0;
+  flex: 1;
+}
+
+.stop-name {
+  font-family: var(--font-display);
+  font-size: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  line-height: 1.1;
+}
+
+.stop-meta {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+
+.stop-clue {
+  margin-top: 8px;
+  font-size: 15px;
+  color: rgba(15, 34, 51, 0.85);
+}
+
+.is-locked {
+  opacity: 0.42;
+}
+
+.is-current .stop-name {
+  color: var(--buoy);
+}
+
+.is-current .stop-meta {
+  color: var(--buoy);
+}
+
+.is-done .stop-meta {
+  color: var(--brass);
+}
+
+/* the current stop's ring breathes like a buoy light */
+.is-current .ring {
+  animation: buoy 2.4s ease-in-out infinite;
+}
+
+@keyframes buoy {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+/* ---------- buttons ---------- */
+
+.btn {
+  display: block;
+  width: 100%;
+  padding: 17px 20px;
+  border: none;
+  border-radius: 2px;
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--font-display);
+  font-size: 18px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.btn--go {
+  background: var(--buoy);
+}
+
+.btn--quiet {
+  background: none;
+  color: var(--depth);
+  border: 1px solid rgba(15, 34, 51, 0.3);
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn:focus-visible,
+a:focus-visible {
+  outline: 3px solid var(--brass);
+  outline-offset: 2px;
+}
+
+.btn[disabled] {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.btn + .btn {
+  margin-top: 10px;
+}
+
+/* ---------- footer / dev ---------- */
+
+.foot {
+  margin-top: 32px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(15, 34, 51, 0.5);
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.foot button {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.devbar {
+  background: var(--brass);
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-align: center;
+  padding: 7px 10px;
+}
+
+/* ---------- stop.html: the AR view ---------- */
+
+.ar {
+  position: fixed;
+  inset: 0;
+  background: var(--ink);
+  display: none;
+}
+
+.ar canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.ar.is-live {
+  display: block;
+}
+
+.hud {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 20px;
+  padding-bottom: calc(20px + env(safe-area-inset-bottom));
+  background: linear-gradient(transparent, rgba(15, 34, 51, 0.9) 40%);
+}
+
+.hud .readout {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--paper);
+  text-align: center;
+  margin-bottom: 12px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
+.status {
+  padding: 14px 16px;
+  border: 1px solid rgba(15, 34, 51, 0.2);
+  border-left: 3px solid var(--depth);
+  background: var(--paper-2);
+  font-size: 15px;
+}
+
+.status--go {
+  border-left-color: var(--buoy);
+}
+
+/* ---------- game.html ---------- */
+
+.game-wrap {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+.game-head {
+  padding: 14px 20px;
+  border-bottom: 1px solid rgba(15, 34, 51, 0.2);
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.game-head .title {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  font-size: 17px;
+  letter-spacing: 0.04em;
+}
+
+.game-head .score {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--depth);
+}
+
+.game-stage {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  min-height: 0;
+}
+
+.game-stage canvas {
+  background: var(--paper-2);
+  border: 1px solid rgba(15, 34, 51, 0.25);
+  touch-action: none;
+  max-width: 100%;
+}
+
+/* memory grid */
+.mem-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  width: 100%;
+  max-width: 340px;
+}
+
+.card {
+  aspect-ratio: 3 / 4;
+  border: 1px solid rgba(15, 34, 51, 0.3);
+  border-radius: 2px;
+  background: var(--ink);
+  color: transparent;
+  font-size: 30px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s;
+}
+
+.card.is-up {
+  background: var(--paper-2);
+  color: var(--ink);
+}
+
+.card.is-matched {
+  background: var(--paper-2);
+  color: var(--ink);
+  border-color: var(--brass);
+  opacity: 0.55;
+}
+
+/* tetris pad */
+.pad {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  width: 100%;
+  max-width: 340px;
+  margin-top: 14px;
+}
+
+.pad button {
+  padding: 16px 0;
+  font-size: 20px;
+  border: 1px solid rgba(15, 34, 51, 0.3);
+  background: var(--paper-2);
+  color: var(--ink);
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.pad button:active {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.hint {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--depth);
+  margin-top: 14px;
+  text-align: center;
+}
+
+/* win overlay */
+.win {
+  position: fixed;
+  inset: 0;
+  background: var(--paper);
+  display: none;
+  align-items: center;
+  padding: 28px;
+}
+
+.win.is-open {
+  display: flex;
+}
+
+.win .inner {
+  width: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
