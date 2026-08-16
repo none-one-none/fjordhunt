@@ -453,8 +453,8 @@
         stops: [
           {
             name: "The Old Landing",
-            lat: 59.917243,
-            lng: 10.632842,
+            lat: 59.92056,
+            lng: 10.63167,
             radius: 30,
             clue: "Start at the water. Look for the stone steps going down.",
             game: "memory",
@@ -1295,16 +1295,78 @@
             inRange = true;
           }
 
-          function onOrient(e) {
-            if (typeof e.webkitCompassHeading === "number")
-              heading = e.webkitCompassHeading;
-            else if (typeof e.alpha === "number") heading = (360 - e.alpha) % 360;
+          /* ----- compass -----
+             Android fires BOTH deviceorientationabsolute (true north) and
+             deviceorientation (alpha measured from wherever the page happened
+             to load). Feeding both into one variable makes the arrow alternate
+             between two unrelated headings every frame, which reads as
+             flicker. So: absolute wins, and the relative event is only used if
+             no absolute source ever appears.
+             iOS fires neither of those as absolute, but supplies
+             webkitCompassHeading, which is already true-north referenced. */
+
+          var hasAbsolute = false;
+          var smoothX = null,
+            smoothY = null;
+          var jitter = 0,
+            lastRaw = null;
+
+          /* Averaging degrees directly breaks across the 0/360 seam, so the
+             heading is smoothed as a unit vector and converted back. */
+          function pushHeading(deg) {
+            if (typeof deg !== "number" || isNaN(deg)) return;
+
+            if (lastRaw !== null) {
+              var d = Math.abs(angleDelta(lastRaw, deg));
+              jitter = jitter * 0.9 + d * 0.1;
+            }
+            lastRaw = deg;
+
+            var r = (deg * Math.PI) / 180;
+            var sx = Math.sin(r),
+              sy = Math.cos(r);
+            if (smoothX === null) {
+              smoothX = sx;
+              smoothY = sy;
+            } else {
+              var k = 0.18; // lower = steadier but laggier
+              smoothX += (sx - smoothX) * k;
+              smoothY += (sy - smoothY) * k;
+            }
+            heading = ((Math.atan2(smoothX, smoothY) * 180) / Math.PI + 360) % 360;
+          }
+
+          /* alpha is reported relative to the device's natural orientation,
+             so a landscape phone needs the screen angle subtracted. */
+          function screenAngle() {
+            if (screen.orientation && typeof screen.orientation.angle === "number")
+              return screen.orientation.angle;
+            if (typeof window.orientation === "number") return window.orientation;
+            return 0;
+          }
+
+          function onAbsolute(e) {
+            if (typeof e.alpha !== "number") return;
+            hasAbsolute = true;
+            pushHeading((360 - e.alpha + screenAngle()) % 360);
+          }
+
+          function onRelative(e) {
+            if (typeof e.webkitCompassHeading === "number") {
+              hasAbsolute = true;
+              pushHeading(e.webkitCompassHeading);
+              return;
+            }
+            // Only a fallback. If an absolute source exists, ignore this.
+            if (hasAbsolute) return;
+            if (e.absolute === true && typeof e.alpha === "number")
+              pushHeading((360 - e.alpha + screenAngle()) % 360);
           }
 
           function startOrientation() {
             function attach() {
-              window.addEventListener("deviceorientationabsolute", onOrient, true);
-              window.addEventListener("deviceorientation", onOrient, true);
+              window.addEventListener("deviceorientationabsolute", onAbsolute, true);
+              window.addEventListener("deviceorientation", onRelative, true);
             }
             var DOE = window.DeviceOrientationEvent;
             if (DOE && typeof DOE.requestPermission === "function")
@@ -1404,6 +1466,14 @@
           }
 
           function hud() {
+            /* A wildly noisy magnetometer usually means the phone needs the
+               figure-of-eight calibration wave, or is next to something
+               magnetic. Saying so beats letting people think it is broken. */
+            if (jitter > 12) {
+              readout.textContent =
+                "Compass unsteady \u00b7 wave the phone in a figure of eight";
+              return;
+            }
             if (devOn()) readout.textContent = "Test mode \u00b7 marker unlocked";
             else if (dist === null) readout.textContent = "Finding you\u2026";
             else if (inRange) readout.textContent = "You are here \u00b7 " + fmt(dist);
@@ -1499,8 +1569,8 @@
           onLeave(function () {
             if (raf) cancelAnimationFrame(raf);
             window.removeEventListener("resize", resize);
-            window.removeEventListener("deviceorientationabsolute", onOrient, true);
-            window.removeEventListener("deviceorientation", onOrient, true);
+            window.removeEventListener("deviceorientationabsolute", onAbsolute, true);
+            window.removeEventListener("deviceorientation", onRelative, true);
             if (watchId !== null) navigator.geolocation.clearWatch(watchId);
             if (stream)
               stream.getTracks().forEach(function (tr) {
