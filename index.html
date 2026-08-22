@@ -7,7 +7,7 @@
       content="width=device-width, initial-scale=1, viewport-fit=cover"
     />
     <meta name="theme-color" content="#e7ede9" />
-    <title>Fjordhunt</title>
+    <title>GTA 6 &mdash; Grand Treasure Adventure</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -445,36 +445,42 @@
       */
 
       var HUNT = {
-        name: "Fjordhunt",
-        subtitle: "Oslo \u00b7 three stops",
+        /* id keeps this hunt's progress separate from other hunts hosted on
+           the same domain. Give every city its own id. */
+        id: "oslo",
+        name: "GTA 6",
+        subtitle: "Grand Treasure Adventure \u00b7 Oslo",
         finale:
-          "You found all three. Show this screen at the meeting point to claim the prize.",
+          "Three worlds, three trials, all cleared. Show this screen at the meeting point to claim the prize.",
 
         stops: [
           {
-            name: "The Old Landing",
-            lat: 59.92056,
-            lng: 10.63167,
-            radius: 30,
-            clue: "Start at the water. Look for the stone steps going down.",
+            name: "The Doors of Durin",
+            lat: 59.9187179,
+            lng: 10.6313207,
+            radius: 20,
+            clue:
+              "The old gate under the mountain opens only for a friend. Stand still until the marker shows itself.",
             game: "memory",
-            symbols: ["\u2693\ufe0f", "\ud83e\udded", "\ud83d\udd6f\ufe0f", "\ud83e\udd89", "\ud83d\udd11", "\u26f5\ufe0f"]
+            symbols: ["\ud83d\udc8d", "\u2694\ufe0f", "\ud83c\udf33", "\u26f0\ufe0f", "\ud83d\udc41\ufe0f", "\ud83d\uddfc"]
           },
           {
-            name: "The Palace Road",
-            lat: 59.912844,
-            lng: 10.6472,
-            radius: 30,
-            clue: "Head southeast, away from the water, until the trees line up on both sides. About fifteen minutes.",
+            name: "The Dark Portal",
+            lat: 59.9177493,
+            lng: 10.6324311,
+            radius: 20,
+            clue:
+              "The portal burns to the south-southeast, roughly a hundred and twenty paces off. Break through what stands in the way.",
             game: "breakout",
             rows: 4
           },
           {
-            name: "The Last Marker",
-            lat: 59.917304,
-            lng: 10.66366,
-            radius: 30,
-            clue: "Turn east and keep going, slightly uphill, until the path opens onto open ground. Another fifteen minutes.",
+            name: "The Getaway",
+            lat: 59.9166878,
+            lng: 10.6333182,
+            radius: 20,
+            clue:
+              "Heat's on. Keep going the same way, another hundred and twenty paces, and don't stop moving. Stack the crates and you're clear.",
             game: "tetris",
             lines: 4
           }
@@ -488,7 +494,10 @@
       (function () {
         "use strict";
 
-        var KEY = "fjordhunt.progress.v1";
+        /* localStorage is scoped to the origin, not the path, so two hunts on
+           the same github.io domain would otherwise share one progress record.
+           Folding the hunt id into the key keeps each city separate. */
+        var KEY = "hunt." + (HUNT.id || "default") + ".progress.v1";
         var DEVKEY = "fjordhunt.dev";
 
         /* ---------- storage ---------- */
