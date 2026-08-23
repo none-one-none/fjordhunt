@@ -603,14 +603,26 @@ function viewStop(n){
     ctx.fillStyle = '#0E1518'; ctx.fill();
   }
 
-  function drawArrow(ctx, x, y, size, dirSign, color){
+  /* the nav arrow: points at the bearing. 0deg = straight ahead. */
+  function drawNavArrow(ctx, x, y, s, angleDeg, color){
     ctx.save();
-    ctx.translate(x,y); ctx.rotate(dirSign > 0 ? 0 : Math.PI);
+    ctx.translate(x, y);
+    ctx.rotate(rad(angleDeg));
+    ctx.scale(1, 0.88);                       // slight ground-plane squash
+    ctx.shadowColor = 'rgba(0,0,0,.5)'; ctx.shadowBlur = 12; ctx.shadowOffsetY = 4;
     ctx.beginPath();
-    ctx.moveTo(size, 0); ctx.lineTo(-size*0.55, -size*0.7);
-    ctx.lineTo(-size*0.2, 0); ctx.lineTo(-size*0.55, size*0.7);
+    ctx.moveTo(0, -s);
+    ctx.lineTo( s*0.78,  s*0.18);
+    ctx.lineTo( s*0.30,  s*0.04);
+    ctx.lineTo( s*0.30,  s*0.80);
+    ctx.lineTo(-s*0.30,  s*0.80);
+    ctx.lineTo(-s*0.30,  s*0.04);
+    ctx.lineTo(-s*0.78,  s*0.18);
     ctx.closePath();
     ctx.fillStyle = color; ctx.fill();
+    ctx.shadowColor = 'transparent';
+    ctx.lineWidth = Math.max(1.5, s*0.06);
+    ctx.strokeStyle = 'rgba(14,21,24,.45)'; ctx.stroke();
     ctx.restore();
   }
 
@@ -692,23 +704,21 @@ function viewStop(n){
         drawPin(ctx, W/2, yTip, r*1.15, color, true);
         chip.textContent = "You're here · " + stop.name;
         chip.className = 'chip here';
-      } else if (heading != null && Math.abs(delta) < HALF_FOV){
-        const x = W/2 + (delta / HALF_FOV) * (W/2 - r*1.6);
-        const yTip = H*0.52 + Math.sin(ts/700) * 4;
-        drawPin(ctx, x, yTip, r, color, false);
-        // leader line down from the tip
-        ctx.strokeStyle = 'rgba(201,146,47,.45)'; ctx.setLineDash([4,5]); ctx.lineWidth = 1.5;
-        ctx.beginPath(); ctx.moveTo(x, yTip+4); ctx.lineTo(x, H*0.78); ctx.stroke();
-        ctx.setLineDash([]);
-        chip.textContent = 'Straight ahead'; chip.className = 'chip';
       } else if (heading != null){
-        const side = delta > 0 ? 1 : -1;
-        const x = side > 0 ? W - 46 : 46;
-        drawArrow(ctx, x, H*0.52, 22 + Math.sin(ts/300)*2, side, '#C9922F');
-        chip.textContent = 'Turn ' + (side > 0 ? 'right' : 'left') + ' · ' + Math.round(Math.abs(delta)) + '°';
+        // navigating: arrow rotates to the bearing and slides toward the side
+        // the target is on. Behind you it simply points back down the screen.
+        const t = Math.max(-1, Math.min(1, delta / HALF_FOV));
+        const size = Math.min(W, H) * 0.125;
+        const x = W/2 + t * (W/2 - size*1.5);
+        const y = H*0.52 + Math.sin(ts/700) * 5;
+        drawNavArrow(ctx, x, y, size, delta, '#C9922F');
+        const off = Math.round(Math.abs(delta));
+        if (off < 12)       chip.textContent = 'Straight ahead';
+        else if (off > 150) chip.textContent = 'Turn around · ' + off + '°';
+        else                chip.textContent = 'Turn ' + (delta > 0 ? 'right' : 'left') + ' · ' + off + '°';
         chip.className = 'chip';
       } else {
-        drawPin(ctx, W/2, H*0.52, r, color, false);
+        drawNavArrow(ctx, W/2, H*0.52, Math.min(W,H)*0.125, 0, 'rgba(201,146,47,.38)');
         chip.textContent = 'Compass off — distance only';
         chip.className = 'chip';
       }
