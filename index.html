@@ -1,1674 +1,1435 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, viewport-fit=cover"
-    />
-    <meta name="theme-color" content="#e7ede9" />
-    <title>GTA 6 &mdash; Grand Treasure Adventure</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600&family=Inter:wght@400;500&display=swap"
-      rel="stylesheet"
-    />
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no, maximum-scale=1">
+<meta name="theme-color" content="#0E1518">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>The Nailmaker's River — Lilleaker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;500;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   THE NAILMAKER'S RIVER — Fjordhunt Lilleaker
+   Single file. No build step. No backend. No dependencies.
+   ============================================================ */
 
-    <style>
-      :root {
-        --paper: #e7ede9;
-        --paper-2: #d6e0dc;
-        --ink: #0f2233;
-        --depth: #1e4b6b;
-        --buoy: #d8402a;
-        --brass: #a9761f;
-        --font-display: "Oswald", "Arial Narrow", sans-serif;
-        --font-body: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
-          sans-serif;
-        --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+:root{
+  --ink:      #0E1518;   /* wet slate */
+  --river:    #14232A;   /* deep river */
+  --iron:     #24343A;   /* cold iron */
+  --edge:     #33474E;   /* hairline */
+  --verd:     #5FB3A1;   /* oxidised copper — primary */
+  --brass:    #C9922F;   /* nail brass — locked / warning */
+  --bone:     #E8E4D9;   /* birch */
+  --mute:     #8CA2A8;
+  --danger:   #D96A5B;
+  --pad-safe: env(safe-area-inset-bottom, 0px);
+}
+
+*{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body{ margin:0; padding:0; height:100%; background:var(--ink); }
+body{
+  font-family:"IBM Plex Sans",system-ui,-apple-system,sans-serif;
+  color:var(--bone);
+  overscroll-behavior:none;
+  -webkit-font-smoothing:antialiased;
+}
+button{ font:inherit; color:inherit; border:0; background:none; cursor:pointer; }
+canvas{ display:block; touch-action:none; }
+
+#app{ min-height:100%; display:flex; flex-direction:column; }
+
+/* ---------- type ---------- */
+.display{ font-family:"Oswald",sans-serif; font-weight:500; letter-spacing:.01em; line-height:1.02; }
+.eyebrow{
+  font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.22em;
+  text-transform:uppercase; color:var(--verd);
+}
+.mono{ font-family:"IBM Plex Mono",monospace; }
+
+/* ---------- shell ---------- */
+.wrap{ width:100%; max-width:520px; margin:0 auto; padding:0 20px; }
+.screen{ flex:1; display:flex; flex-direction:column; padding-bottom:calc(28px + var(--pad-safe)); }
+
+/* ---------- home hero ---------- */
+.hero{ padding:44px 0 26px; }
+.hero h1{
+  font-family:"Oswald",sans-serif; font-weight:700; font-size:clamp(38px,13vw,60px);
+  line-height:.92; margin:12px 0 0; text-transform:uppercase; letter-spacing:-.01em;
+}
+.hero h1 em{ display:block; font-style:normal; font-weight:300; color:var(--verd); }
+.hero p{ color:var(--mute); font-size:15px; line-height:1.55; margin:16px 0 0; max-width:38ch; }
+
+.facts{ display:flex; gap:22px; margin-top:22px; flex-wrap:wrap; }
+.fact b{ display:block; font-family:"Oswald",sans-serif; font-weight:500; font-size:22px; }
+.fact span{ font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--mute); }
+
+/* ---------- SIGNATURE: the river ledger ---------- */
+.ledger{ margin:34px 0 0; position:relative; }
+.ledger::before{
+  content:""; position:absolute; left:13px; top:14px; bottom:14px; width:2px;
+  background:linear-gradient(180deg,var(--edge),var(--verd),var(--edge)); opacity:.55;
+}
+.stopcard{
+  position:relative; display:flex; gap:16px; align-items:flex-start;
+  padding:14px 0; text-align:left; width:100%;
+}
+.rivet{
+  flex:0 0 28px; height:28px; border-radius:50%; margin-top:2px; position:relative; z-index:1;
+  border:2px solid var(--edge); background:var(--river);
+  display:grid; place-items:center;
+  font-family:"IBM Plex Mono",monospace; font-size:12px; color:var(--mute);
+}
+.stopcard[data-state="active"] .rivet{ border-color:var(--verd); color:var(--verd); box-shadow:0 0 0 5px rgba(95,179,161,.13); }
+.stopcard[data-state="done"] .rivet{ border-color:var(--brass); background:var(--brass); color:var(--ink); }
+.sc-body{ flex:1; min-width:0; }
+.sc-name{ font-family:"Oswald",sans-serif; font-weight:500; font-size:19px; letter-spacing:.01em; }
+.stopcard[data-state="locked"] .sc-name{ color:var(--mute); }
+.sc-meta{ font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--mute); margin-top:3px; letter-spacing:.06em; }
+.sc-clue{ font-size:14px; line-height:1.5; color:var(--bone); margin-top:8px; opacity:.85; }
+.sc-go{ font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.18em;
+  text-transform:uppercase; color:var(--verd); margin-top:10px; display:inline-block; }
+.leg{ font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.14em;
+  color:var(--edge); padding-left:44px; }
+
+/* ---------- buttons ---------- */
+.btn{
+  display:block; width:100%; padding:16px; border-radius:2px; text-align:center;
+  font-family:"Oswald",sans-serif; font-weight:500; font-size:16px;
+  letter-spacing:.14em; text-transform:uppercase;
+  background:var(--verd); color:var(--ink);
+  transition:transform .12s ease, opacity .12s ease;
+}
+.btn:active{ transform:scale(.985); }
+.btn.ghost{ background:none; color:var(--bone); border:1px solid var(--edge); }
+.btn.brass{ background:var(--brass); }
+.btn:disabled{ opacity:.35; }
+.btn-row{ display:flex; gap:10px; }
+.btn-row .btn{ flex:1; }
+
+/* ---------- top bar ---------- */
+.topbar{
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  padding:calc(14px + env(safe-area-inset-top,0px)) 20px 14px;
+  border-bottom:1px solid var(--edge);
+}
+.topbar .back{ font-family:"IBM Plex Mono",monospace; font-size:12px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--mute); }
+.topbar .ttl{ font-family:"Oswald",sans-serif; font-weight:500; font-size:16px;
+  letter-spacing:.06em; text-transform:uppercase; }
+
+/* ---------- AR view ---------- */
+.arwrap{ position:relative; flex:1; background:#000; overflow:hidden; }
+#arcanvas{ position:absolute; inset:0; width:100%; height:100%; }
+.arhud{
+  position:absolute; left:0; right:0; bottom:0; padding:16px 20px calc(18px + var(--pad-safe));
+  background:linear-gradient(180deg,transparent,rgba(14,21,24,.92)38%);
+}
+.readout{ display:flex; align-items:baseline; gap:10px; }
+.readout .dist{ font-family:"Oswald",sans-serif; font-weight:700; font-size:44px; line-height:1; }
+.readout .unit{ font-family:"IBM Plex Mono",monospace; font-size:12px; color:var(--mute); letter-spacing:.14em; }
+.readout .acc{ margin-left:auto; font-family:"IBM Plex Mono",monospace; font-size:10px;
+  color:var(--mute); letter-spacing:.1em; text-align:right; }
+.arnote{ font-size:13px; color:var(--mute); margin:8px 0 14px; line-height:1.45; }
+.chip{
+  position:absolute; top:16px; left:50%; transform:translateX(-50%);
+  font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.16em; text-transform:uppercase;
+  background:rgba(14,21,24,.78); border:1px solid var(--edge); color:var(--bone);
+  padding:7px 14px; border-radius:2px; white-space:nowrap;
+}
+.chip.here{ border-color:var(--verd); color:var(--verd); }
+
+/* ---------- games ---------- */
+.gamewrap{ flex:1; display:flex; flex-direction:column; padding:16px 20px calc(16px + var(--pad-safe)); }
+.ghud{
+  display:flex; align-items:center; gap:14px; margin-bottom:14px;
+  font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--mute);
+}
+.ghud b{ color:var(--bone); font-weight:500; }
+.ghud .spacer{ flex:1; }
+.nextbox{ display:flex; align-items:center; gap:8px; }
+#nextcv{ width:56px; height:40px; border:1px solid var(--edge); background:var(--river); }
+.screen.fixed{ height:100vh; height:100dvh; max-height:100dvh; overflow:hidden; }
+.stage{ flex:1; display:grid; place-items:center; min-height:0; overflow:hidden; }
+.stage canvas{ background:var(--river); border:1px solid var(--edge); max-width:100%; }
+
+.toast{
+  position:fixed; left:50%; bottom:calc(120px + var(--pad-safe)); transform:translateX(-50%);
+  background:var(--danger); color:#150C0A; padding:10px 18px; border-radius:2px;
+  font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.12em;
+  text-transform:uppercase; z-index:60; pointer-events:none;
+  animation:toastin .28s ease;
+}
+@keyframes toastin{ from{ opacity:0; transform:translate(-50%,8px);} to{ opacity:1; transform:translate(-50%,0);} }
+
+/* control pad — touch-action none is load-bearing on Android */
+.pad{ margin-top:14px; touch-action:none; user-select:none; -webkit-user-select:none; }
+.padrow{ display:flex; gap:8px; margin-top:8px; }
+.key{
+  flex:1; padding:16px 0; border:1px solid var(--edge); background:var(--river);
+  border-radius:2px; text-align:center; font-size:20px; line-height:1;
+  color:var(--bone); touch-action:none;
+}
+.key:active{ background:var(--iron); border-color:var(--verd); }
+.key.wide{ flex:2; font-family:"IBM Plex Mono",monospace; font-size:12px; letter-spacing:.16em; }
+
+/* memory grid */
+.mgrid{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; width:100%; max-width:340px; }
+.mcard{
+  aspect-ratio:3/4; border:1px solid var(--edge); background:var(--river); border-radius:2px;
+  display:grid; place-items:center; font-size:30px; transition:background .16s, border-color .16s;
+}
+.mcard[data-up="1"]{ background:var(--iron); border-color:var(--verd); }
+.mcard[data-done="1"]{ background:rgba(201,146,47,.16); border-color:var(--brass); }
+.mcard .face{ visibility:hidden; }           /* iOS-safe: opacity/color:transparent fails on emoji */
+.mcard[data-up="1"] .face,
+.mcard[data-done="1"] .face{ visibility:visible; }
+
+/* ---------- win ---------- */
+.win{ flex:1; display:flex; flex-direction:column; justify-content:center; padding:0 20px calc(30px + var(--pad-safe)); }
+.win h2{ font-family:"Oswald",sans-serif; font-weight:700; font-size:40px; text-transform:uppercase;
+  margin:0 0 6px; line-height:1; }
+.win p{ color:var(--mute); line-height:1.6; margin:0 0 26px; font-size:15px; }
+.win .nextclue{
+  border-left:2px solid var(--verd); padding:12px 0 12px 16px; margin:0 0 26px;
+  font-size:16px; line-height:1.55; color:var(--bone);
+}
+
+@media (prefers-reduced-motion: reduce){
+  *{ animation-duration:.001s !important; transition-duration:.001s !important; }
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+/* ============================================================
+   YOUR HUNT — EDIT THIS
+   ------------------------------------------------------------
+   NOTE ON LOCAL FACTS: the clue text below leans on the area's
+   industrial history (Mustad's nail works on the Lysakerelva
+   from the 1870s; CC Vest opened 1989 in the old factory halls;
+   the tram reached Lilleaker in 1919). Walk the route once and
+   check each clue actually matches what a player can see.
+   ============================================================ */
+
+const HUNT = {
+  id: 'lilleaker-01',          // <- storage key namespace. Change per city/hunt.
+  title: "The Nailmaker's",
+  titleEm: "River",
+  region: "Lilleaker · Oslo",
+  intro: "Five stops upstream, from the fjord shore to the old falls. " +
+         "This is where Mustad hammered nails out of iron from the 1870s on, " +
+         "and where the factory halls are now a shopping centre. " +
+         "Follow the water. Each stop unlocks the next.",
+
+  stops: [
+    {
+      name: "The Fjord Gate",
+      lat: 59.9129802, lng: 10.6461523, radius: 25,
+      clue: "Start where the land runs out. Face the water, put the city at your back, and stand where the shore path begins.",
+      game: "memory",
+      symbols: ["⚓","🔩","🪵","🐟","🧭","🔥"]
+    },
+    {
+      name: "The Shore Line",
+      lat: 59.9128375, lng: 10.6417665, radius: 25,
+      clue: "Head west along the water, about 245 metres — three or four minutes. Stop when the path bends and the road noise rises.",
+      game: "breakout",
+      rows: 4
+    },
+    {
+      name: "The River Mouth",
+      lat: 59.9142695, lng: 10.6349685, radius: 30,
+      clue: "Keep west-northwest, roughly 410 metres. You're looking for the point where the Lysakerelva finally reaches the fjord.",
+      game: "snake",
+      food: 8
+    },
+    {
+      name: "The Factory Yard",
+      lat: 59.9167688, lng: 10.6344642, radius: 30,
+      clue: "Now turn upstream and go north, about 280 metres. Walk into the ground the nail works once filled.",
+      game: "racer",
+      goal: 900
+    },
+    {
+      name: "The Old Falls",
+      lat: 59.9187201, lng: 10.6312979, radius: 30,
+      clue: "Last leg: northwest, 280 metres, still following the river. Listen for it before you see it.",
+      game: "tetris",
+      lines: 3
+    }
+  ],
+
+  outro: "That's the whole river. Five stops, about 1.2 kilometres, " +
+         "and roughly a century and a half of iron behind you."
+};
+
+/* ============================================================
+   NOTHING BELOW HERE NEEDS EDITING
+   ============================================================ */
+
+/* ---------- storage (hunt-scoped: fixes cross-hunt bleed on shared origins) ---------- */
+const SKEY = 'fjordhunt:' + HUNT.id + ':v2';
+function loadState(){
+  try { const s = JSON.parse(localStorage.getItem(SKEY)); if (s && typeof s.cleared === 'number') return s; }
+  catch(e){}
+  return { cleared: 0 };
+}
+function saveState(s){ try{ localStorage.setItem(SKEY, JSON.stringify(s)); }catch(e){} }
+let STATE = loadState();
+
+/* ---------- geo maths ---------- */
+const R_EARTH = 6371000;
+const rad = d => d * Math.PI / 180;
+const deg = r => r * 180 / Math.PI;
+
+function haversine(a1,o1,a2,o2){
+  const dLat = rad(a2-a1), dLng = rad(o2-o1);
+  const s = Math.sin(dLat/2)**2 + Math.cos(rad(a1))*Math.cos(rad(a2))*Math.sin(dLng/2)**2;
+  return 2 * R_EARTH * Math.asin(Math.min(1, Math.sqrt(s)));
+}
+function bearing(a1,o1,a2,o2){
+  const y = Math.sin(rad(o2-o1)) * Math.cos(rad(a2));
+  const x = Math.cos(rad(a1))*Math.sin(rad(a2)) - Math.sin(rad(a1))*Math.cos(rad(a2))*Math.cos(rad(o2-o1));
+  return (deg(Math.atan2(y,x)) + 360) % 360;
+}
+function legInfo(a,b){
+  const d = haversine(a.lat,a.lng,b.lat,b.lng);
+  const br = bearing(a.lat,a.lng,b.lat,b.lng);
+  const names = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
+  return { m: Math.round(d), dir: names[Math.round(br/22.5) % 16] };
+}
+
+/* ---------- tiny DOM helpers ---------- */
+const app = document.getElementById('app');
+function el(tag, cls, html){
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (html != null) n.innerHTML = html;
+  return n;
+}
+function toast(msg, ms){
+  const t = el('div','toast', msg);
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(), ms || 1600);
+}
+function fitCanvas(cv, cssW, cssH){
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  cv.style.width = cssW + 'px';
+  cv.style.height = cssH + 'px';
+  cv.width = Math.round(cssW * dpr);
+  cv.height = Math.round(cssH * dpr);
+  const ctx = cv.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  return ctx;
+}
+/* press-and-hold repeater for game keys */
+function holdKey(node, fn, first, rep){
+  first = first || 150; rep = rep || 60;
+  let t1=null, t2=null;
+  const start = e => {
+    e.preventDefault();                  // kills Android double-tap zoom
+    fn();
+    t1 = setTimeout(()=>{ t2 = setInterval(fn, rep); }, first);
+  };
+  const stop = () => { clearTimeout(t1); clearInterval(t2); t1=t2=null; };
+  node.addEventListener('touchstart', start, {passive:false});
+  node.addEventListener('touchend', stop);
+  node.addEventListener('touchcancel', stop);
+  node.addEventListener('mousedown', start);
+  window.addEventListener('mouseup', stop);
+  return () => { stop(); };
+}
+
+/* ============================================================
+   ROUTER
+   ============================================================ */
+let teardown = null;
+function go(hash){ location.hash = hash; }
+function route(){
+  if (teardown){ try{ teardown(); }catch(e){} teardown = null; }
+  app.innerHTML = '';
+  const h = location.hash || '#/';
+  let m;
+  if ((m = h.match(/^#\/stop\/(\d+)/)))      viewStop(+m[1]);
+  else if ((m = h.match(/^#\/game\/(\d+)/))) viewGame(+m[1]);
+  else if (h === '#/done')                   viewDone();
+  else                                       viewHome();
+  window.scrollTo(0,0);
+}
+window.addEventListener('hashchange', route);
+
+/* ============================================================
+   HOME
+   ============================================================ */
+function viewHome(){
+  const scr = el('div','screen');
+  const w   = el('div','wrap');
+
+  const hero = el('div','hero');
+  hero.appendChild(el('div','eyebrow', HUNT.region));
+  hero.appendChild(el('h1', null, HUNT.title + '<em>' + HUNT.titleEm + '</em>'));
+  hero.appendChild(el('p', null, HUNT.intro));
+
+  const total = HUNT.stops.reduce((s,_,i)=> i ? s + haversine(
+    HUNT.stops[i-1].lat, HUNT.stops[i-1].lng, HUNT.stops[i].lat, HUNT.stops[i].lng) : 0, 0);
+  const facts = el('div','facts');
+  [[HUNT.stops.length,'stops'],[ (total/1000).toFixed(1)+' km','on foot'],['~40 min','with games']]
+    .forEach(([b,s])=>{
+      const f = el('div','fact'); f.appendChild(el('b',null,b)); f.appendChild(el('span',null,s)); facts.appendChild(f);
+    });
+  hero.appendChild(facts);
+  w.appendChild(hero);
+
+  /* --- signature: the river ledger --- */
+  const led = el('div','ledger');
+  HUNT.stops.forEach((st,i)=>{
+    const done   = i < STATE.cleared;
+    const active = i === STATE.cleared;
+    const state  = done ? 'done' : active ? 'active' : 'locked';
+
+    const card = el('button','stopcard');
+    card.dataset.state = state;
+    card.appendChild(el('div','rivet', done ? '&#10003;' : String(i+1)));
+
+    const body = el('div','sc-body');
+    body.appendChild(el('div','sc-name', done || active ? st.name : 'Sealed'));
+    body.appendChild(el('div','sc-meta', st.lat.toFixed(5) + ', ' + st.lng.toFixed(5) + ' · ' + st.radius + ' m'));
+    if (active){
+      body.appendChild(el('div','sc-clue', st.clue));
+      body.appendChild(el('div','sc-go', 'Open the compass &#8594;'));
+    } else if (done){
+      body.appendChild(el('div','sc-clue', 'Cleared.'));
+    } else {
+      body.appendChild(el('div','sc-clue', 'Clear stop ' + i + ' to unlock this clue.'));
+    }
+    card.appendChild(body);
+
+    if (done || active) card.addEventListener('click', ()=> go('#/stop/' + (i+1)));
+    else card.addEventListener('click', ()=> toast('Locked'));
+    led.appendChild(card);
+
+    if (i < HUNT.stops.length - 1){
+      const L = legInfo(st, HUNT.stops[i+1]);
+      led.appendChild(el('div','leg', '│ ' + L.m + ' m ' + L.dir));
+    }
+  });
+  w.appendChild(led);
+
+  const actions = el('div', null);
+  actions.style.marginTop = '30px';
+  if (STATE.cleared >= HUNT.stops.length){
+    const b = el('button','btn brass','Hunt complete');
+    b.addEventListener('click', ()=> go('#/done'));
+    actions.appendChild(b);
+  } else {
+    const b = el('button','btn', STATE.cleared === 0 ? 'Start the hunt' : 'Continue · stop ' + (STATE.cleared+1));
+    b.addEventListener('click', ()=> go('#/stop/' + (STATE.cleared+1)));
+    actions.appendChild(b);
+  }
+  if (STATE.cleared > 0){
+    const r = el('button','btn ghost','Reset progress');
+    r.style.marginTop = '10px';
+    r.addEventListener('click', ()=>{
+      if (confirm('Wipe progress for this hunt and start from stop 1?')){
+        STATE = { cleared: 0 }; saveState(STATE); route();
       }
-      * {
-        box-sizing: border-box;
-        -webkit-tap-highlight-color: transparent;
+    });
+    actions.appendChild(r);
+  }
+  w.appendChild(actions);
+
+  scr.appendChild(w);
+  app.appendChild(scr);
+}
+
+/* ============================================================
+   STOP — camera + compass + GPS + the pin
+   ============================================================ */
+function viewStop(n){
+  const idx  = n - 1;
+  const stop = HUNT.stops[idx];
+  if (!stop) return go('#/');
+
+  const scr = el('div','screen fixed');
+  scr.style.paddingBottom = '0';
+
+  const bar  = el('div','topbar');
+  const back = el('button','back','&#8592; Route');
+  back.addEventListener('click', ()=> go('#/'));
+  bar.appendChild(back);
+  bar.appendChild(el('div','ttl','Stop ' + n));
+  bar.appendChild(el('div','back','&nbsp;'));
+  scr.appendChild(bar);
+
+  const arw = el('div','arwrap');
+  const cv  = el('canvas'); cv.id = 'arcanvas';
+  arw.appendChild(cv);
+
+  const chip = el('div','chip','Locating…');
+  arw.appendChild(chip);
+
+  const hud = el('div','arhud');
+  const ro  = el('div','readout');
+  const dist = el('div','dist','—'); const unit = el('div','unit','METRES AWAY');
+  const acc  = el('div','acc','gps —<br>compass —');
+  ro.appendChild(dist); ro.appendChild(unit); ro.appendChild(acc);
+  hud.appendChild(ro);
+  const note = el('div','arnote', stop.clue);
+  hud.appendChild(note);
+
+  const enable = el('button','btn ghost','Turn on camera &amp; compass');
+  const begin  = el('button','btn','Begin the challenge');
+  begin.style.display = 'none';
+  hud.appendChild(enable);
+  hud.appendChild(begin);
+  arw.appendChild(hud);
+  scr.appendChild(arw);
+  app.appendChild(scr);
+
+  begin.addEventListener('click', ()=> go('#/game/' + n));
+
+  /* ---- live state ---- */
+  let heading = null, hasAbsolute = false, smoothX = 0, smoothY = 0, smoothInit = false;
+  let pos = null, distM = null, inRange = false, wasInRange = false;
+  let video = null, stream = null, camOn = false, raf = 0, watchId = 0, alive = true;
+  let landT = 0;   // pin landing animation clock
+
+  /* ---- compass ---- */
+  function pushHeading(h){
+    const r = rad(h), x = Math.cos(r), y = Math.sin(r);
+    if (!smoothInit){ smoothX = x; smoothY = y; smoothInit = true; }
+    else { smoothX += (x - smoothX) * 0.18; smoothY += (y - smoothY) * 0.18; }
+    heading = (deg(Math.atan2(smoothY, smoothX)) + 360) % 360;
+  }
+  function screenAngle(){
+    if (screen.orientation && typeof screen.orientation.angle === 'number') return screen.orientation.angle;
+    return window.orientation || 0;
+  }
+  // Separate handlers with hasAbsolute gating — feeding both into one variable
+  // makes Android compasses flicker between two unrelated headings.
+  function onAbsolute(e){
+    if (e.alpha == null) return;
+    hasAbsolute = true;
+    pushHeading((360 - e.alpha + screenAngle()) % 360);
+  }
+  function onOrientation(e){
+    if (typeof e.webkitCompassHeading === 'number' && !isNaN(e.webkitCompassHeading)){
+      pushHeading(e.webkitCompassHeading);       // iOS is already true-north, no screen comp
+      return;
+    }
+    if (hasAbsolute) return;
+    if (e.absolute && e.alpha != null) pushHeading((360 - e.alpha + screenAngle()) % 360);
+  }
+
+  async function enableSensors(){
+    enable.disabled = true; enable.textContent = 'Starting…';
+    // iOS 13+ gates motion sensors behind an explicit gesture-bound permission call
+    try{
+      if (typeof DeviceOrientationEvent !== 'undefined' &&
+          typeof DeviceOrientationEvent.requestPermission === 'function'){
+        await DeviceOrientationEvent.requestPermission();
       }
-      html,
-      body {
-        margin: 0;
-        padding: 0;
-        min-height: 100%;
+    }catch(e){}
+    window.addEventListener('deviceorientationabsolute', onAbsolute);
+    window.addEventListener('deviceorientation', onOrientation);
+
+    try{
+      stream = await navigator.mediaDevices.getUserMedia({
+        video:{ facingMode:{ ideal:'environment' } }, audio:false });
+      video = document.createElement('video');
+      video.setAttribute('playsinline',''); video.setAttribute('muted','');
+      video.playsInline = true; video.muted = true; video.srcObject = stream;
+      await video.play();
+      camOn = true;
+    }catch(e){
+      camOn = false;
+      toast('No camera — compass still works', 2200);
+    }
+    enable.style.display = 'none';
+  }
+  enable.addEventListener('click', enableSensors);
+
+  /* ---- GPS ---- */
+  if (navigator.geolocation){
+    watchId = navigator.geolocation.watchPosition(p=>{
+      pos = p;
+      distM = haversine(p.coords.latitude, p.coords.longitude, stop.lat, stop.lng);
+      inRange = distM <= stop.radius;
+      if (inRange && !wasInRange){ wasInRange = true; landT = 0; if (navigator.vibrate) navigator.vibrate([30,60,30]); }
+      if (!inRange) wasInRange = false;
+    }, err=>{
+      chip.textContent = err.code === 1 ? 'Location blocked' : 'No GPS fix yet';
+    }, { enableHighAccuracy:true, maximumAge:1000, timeout:20000 });
+  }
+
+  /* ---- the pin: a map-marker teardrop, drawn on the 2D canvas ---- */
+  function drawPin(ctx, x, yTip, r, fill, planted){
+    const d  = r * 2.6;                    // tip sits this far below the head centre
+    const cy = yTip - d;
+    const k  = Math.sqrt(1 - (r*r)/(d*d)); // tangent geometry from tip to head circle
+    const a0 = Math.atan2(r/d,  k);
+    const a1 = Math.atan2(r/d, -k);
+
+    // ground shadow
+    ctx.save();
+    ctx.globalAlpha = planted ? 0.5 : 0.28;
+    ctx.fillStyle = '#000';
+    ctx.beginPath(); ctx.ellipse(x, yTip + 3, r * 0.85, r * 0.26, 0, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+
+    // body
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,.55)'; ctx.shadowBlur = 14; ctx.shadowOffsetY = 4;
+    ctx.beginPath();
+    ctx.moveTo(x, yTip);
+    ctx.lineTo(x + r*k, cy + r*r/d);
+    ctx.arc(x, cy, r, a0, a1, true);
+    ctx.closePath();
+    ctx.fillStyle = fill; ctx.fill();
+    ctx.restore();
+
+    // rim + hole
+    ctx.lineWidth = Math.max(1.5, r*0.09);
+    ctx.strokeStyle = 'rgba(0,0,0,.28)';
+    ctx.beginPath(); ctx.arc(x, cy, r*0.99, 0, Math.PI*2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(x, cy, r*0.40, 0, Math.PI*2);
+    ctx.fillStyle = '#0E1518'; ctx.fill();
+  }
+
+  function drawArrow(ctx, x, y, size, dirSign, color){
+    ctx.save();
+    ctx.translate(x,y); ctx.rotate(dirSign > 0 ? 0 : Math.PI);
+    ctx.beginPath();
+    ctx.moveTo(size, 0); ctx.lineTo(-size*0.55, -size*0.7);
+    ctx.lineTo(-size*0.2, 0); ctx.lineTo(-size*0.55, size*0.7);
+    ctx.closePath();
+    ctx.fillStyle = color; ctx.fill();
+    ctx.restore();
+  }
+
+  /* ---- render loop ---- */
+  const ctx = cv.getContext('2d');
+  let dpr = 1;
+  function resize(){
+    const r = arw.getBoundingClientRect();
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    cv.width  = Math.round(r.width  * dpr);
+    cv.height = Math.round(r.height * dpr);
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    return r;
+  }
+  let box = resize();
+  const onResize = () => { box = resize(); };
+  window.addEventListener('resize', onResize);
+  window.addEventListener('orientationchange', onResize);
+
+  const HALF_FOV = 32;   // degrees either side of centre we treat as "on screen"
+
+  function frame(ts){
+    if (!alive) return;
+    raf = requestAnimationFrame(frame);
+    const W = box.width || cv.clientWidth, H = box.height || cv.clientHeight;
+    if (!W || !H){ box = resize(); return; }
+
+    // background: camera feed, or a dark sonar field if the camera is off
+    if (camOn && video && video.readyState >= 2){
+      const vw = video.videoWidth, vh = video.videoHeight;
+      const s = Math.max(W/vw, H/vh);
+      const dw = vw*s, dh = vh*s;
+      ctx.drawImage(video, (W-dw)/2, (H-dh)/2, dw, dh);
+      ctx.fillStyle = 'rgba(14,21,24,.18)'; ctx.fillRect(0,0,W,H);
+    } else {
+      const g = ctx.createRadialGradient(W/2,H*0.55,10,W/2,H*0.55,Math.max(W,H)*0.8);
+      g.addColorStop(0,'#1B2C33'); g.addColorStop(1,'#0B1114');
+      ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+      ctx.strokeStyle = 'rgba(95,179,161,.10)'; ctx.lineWidth = 1;
+      for (let i=1;i<=4;i++){
+        ctx.beginPath(); ctx.arc(W/2, H*0.55, i*Math.min(W,H)*0.11, 0, Math.PI*2); ctx.stroke();
       }
-      body {
-        background: var(--paper);
-        color: var(--ink);
-        font-family: var(--font-body);
-        font-size: 16px;
-        line-height: 1.5;
-        -webkit-font-smoothing: antialiased;
-        overscroll-behavior: none;
+    }
+
+    // horizon tick line
+    ctx.strokeStyle = 'rgba(232,228,217,.16)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(0,H*0.52); ctx.lineTo(W,H*0.52); ctx.stroke();
+
+    if (pos == null){
+      chip.textContent = 'Waiting for GPS…'; chip.className = 'chip';
+    } else if (heading == null){
+      chip.textContent = camOn ? 'Waiting for compass…' : 'Compass off';
+      chip.className = 'chip';
+    }
+
+    if (pos){
+      const brg = bearing(pos.coords.latitude, pos.coords.longitude, stop.lat, stop.lng);
+      let delta = heading == null ? 0 : ((brg - heading + 540) % 360) - 180;
+
+      const planted = inRange;
+      const color   = planted ? '#5FB3A1' : '#C9922F';
+
+      // pin size grows as you close in; caps so it never swamps the frame
+      const near = distM == null ? 1 : Math.min(1, 40 / Math.max(distM, 8));
+      let r = Math.min(W,H) * (0.045 + 0.075 * near);
+
+      if (planted){
+        // land it dead centre with a short settle bounce
+        landT = Math.min(1, landT + 0.045);
+        const ease = 1 - Math.pow(1 - landT, 3);
+        const bounce = Math.sin(landT * Math.PI * 2) * (1 - landT) * 14;
+        const yTip = H*0.52 + (1-ease) * -H*0.35 + bounce;
+        // pulsing ring on the ground
+        const p = (ts/900) % 1;
+        ctx.save();
+        ctx.globalAlpha = (1-p) * 0.6; ctx.strokeStyle = '#5FB3A1'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.ellipse(W/2, H*0.52+3, r*(0.9+p*2.6), r*(0.28+p*0.8), 0, 0, Math.PI*2); ctx.stroke();
+        ctx.restore();
+        drawPin(ctx, W/2, yTip, r*1.15, color, true);
+        chip.textContent = "You're here · " + stop.name;
+        chip.className = 'chip here';
+      } else if (heading != null && Math.abs(delta) < HALF_FOV){
+        const x = W/2 + (delta / HALF_FOV) * (W/2 - r*1.6);
+        const yTip = H*0.52 + Math.sin(ts/700) * 4;
+        drawPin(ctx, x, yTip, r, color, false);
+        // leader line down from the tip
+        ctx.strokeStyle = 'rgba(201,146,47,.45)'; ctx.setLineDash([4,5]); ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(x, yTip+4); ctx.lineTo(x, H*0.78); ctx.stroke();
+        ctx.setLineDash([]);
+        chip.textContent = 'Straight ahead'; chip.className = 'chip';
+      } else if (heading != null){
+        const side = delta > 0 ? 1 : -1;
+        const x = side > 0 ? W - 46 : 46;
+        drawArrow(ctx, x, H*0.52, 22 + Math.sin(ts/300)*2, side, '#C9922F');
+        chip.textContent = 'Turn ' + (side > 0 ? 'right' : 'left') + ' · ' + Math.round(Math.abs(delta)) + '°';
+        chip.className = 'chip';
+      } else {
+        drawPin(ctx, W/2, H*0.52, r, color, false);
+        chip.textContent = 'Compass off — distance only';
+        chip.className = 'chip';
       }
-      .shell {
-        width: min(560px, 100%);
-        margin: 0 auto;
-        padding: 24px 20px 48px;
-      }
-      .eyebrow {
-        font-family: var(--font-mono);
-        font-size: 11px;
-        letter-spacing: 0.18em;
-        text-transform: uppercase;
-        color: var(--depth);
-        margin: 0 0 6px;
-      }
-      h1 {
-        font-family: var(--font-display);
-        font-weight: 600;
-        font-size: clamp(34px, 11vw, 52px);
-        line-height: 0.95;
-        text-transform: uppercase;
-        margin: 0 0 6px;
-      }
-      .sub,
-      .coord {
-        font-family: var(--font-mono);
-        font-size: 12px;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        color: var(--depth);
-        margin: 0;
-      }
-      .rule {
-        height: 1px;
-        background: var(--ink);
-        opacity: 0.25;
-        margin: 22px 0;
-      }
-      .stops {
-        list-style: none;
-        margin: 0;
-        padding: 0;
-      }
-      .stop {
-        display: flex;
-        gap: 16px;
-        align-items: flex-start;
-        padding: 18px 0;
-        border-top: 1px solid rgba(15, 34, 51, 0.18);
-        text-decoration: none;
-        color: inherit;
-      }
-      .stops li:last-child .stop {
-        border-bottom: 1px solid rgba(15, 34, 51, 0.18);
-      }
-      .ring {
-        flex: 0 0 auto;
-        width: 46px;
-        height: 46px;
-        position: relative;
-      }
-      .ring svg {
-        display: block;
-        width: 100%;
-        height: 100%;
-      }
-      .ring .num {
-        position: absolute;
-        inset: 0;
-        display: grid;
-        place-items: center;
-        font-family: var(--font-mono);
-        font-size: 14px;
-        font-weight: 600;
-      }
-      .stop-body {
-        min-width: 0;
-        flex: 1;
-      }
-      .stop-name {
-        font-family: var(--font-display);
-        font-size: 20px;
-        text-transform: uppercase;
-        line-height: 1.1;
-      }
-      .stop-meta {
-        font-family: var(--font-mono);
-        font-size: 11px;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-        margin-top: 4px;
-      }
-      .stop-clue {
-        margin-top: 8px;
-        font-size: 15px;
-        color: rgba(15, 34, 51, 0.85);
-      }
-      .is-locked {
-        opacity: 0.42;
-      }
-      .is-current .stop-name,
-      .is-current .stop-meta {
-        color: var(--buoy);
-      }
-      .is-done .stop-meta {
-        color: var(--brass);
-      }
-      .is-current .ring {
-        animation: buoy 2.4s ease-in-out infinite;
-      }
-      @keyframes buoy {
-        0%,
-        100% {
-          opacity: 1;
+
+      // readout
+      dist.textContent = distM == null ? '—' : (distM < 1000 ? Math.round(distM) : (distM/1000).toFixed(2));
+      unit.textContent = distM != null && distM >= 1000 ? 'KM AWAY' : 'METRES AWAY';
+      acc.innerHTML = 'gps ±' + Math.round(pos.coords.accuracy) + ' m<br>' +
+                      (heading == null ? 'compass —' : 'heading ' + Math.round(heading) + '°');
+
+      const show = inRange;
+      begin.style.display = show ? 'block' : 'none';
+      if (show) note.textContent = 'Look around you. ' + stop.name + ' — take the challenge when you are ready.';
+      else if (pos.coords.accuracy > 40) note.textContent = stop.clue + ' (GPS is vague here — wave the phone in a figure of eight.)';
+      else note.textContent = stop.clue;
+    }
+  }
+  raf = requestAnimationFrame(frame);
+
+  teardown = () => {
+    alive = false;
+    cancelAnimationFrame(raf);
+    window.removeEventListener('resize', onResize);
+    window.removeEventListener('orientationchange', onResize);
+    window.removeEventListener('deviceorientationabsolute', onAbsolute);
+    window.removeEventListener('deviceorientation', onOrientation);
+    if (watchId) navigator.geolocation.clearWatch(watchId);
+    if (stream) stream.getTracks().forEach(t=>t.stop());
+    if (video){ video.pause(); video.srcObject = null; }
+  };
+}
+
+/* ============================================================
+   GAME SHELL
+   ============================================================ */
+function viewGame(n){
+  const idx  = n - 1;
+  const stop = HUNT.stops[idx];
+  if (!stop) return go('#/');
+
+  const scr = el('div','screen fixed'); scr.style.paddingBottom = '0';
+  const bar = el('div','topbar');
+  const back = el('button','back','&#8592; Compass');
+  back.addEventListener('click', ()=> go('#/stop/' + n));
+  bar.appendChild(back);
+  bar.appendChild(el('div','ttl', stop.name));
+  bar.appendChild(el('div','back','&nbsp;'));
+  scr.appendChild(bar);
+
+  const gw = el('div','gamewrap');
+  scr.appendChild(gw);
+  app.appendChild(scr);
+
+  const onWin = () => {
+    if (STATE.cleared < n){ STATE.cleared = n; saveState(STATE); }
+    if (navigator.vibrate) navigator.vibrate([40,50,40,50,120]);
+    setTimeout(()=> renderWin(n), 420);
+  };
+
+  const runners = { memory:gameMemory, breakout:gameBreakout, snake:gameSnake, racer:gameRacer, tetris:gameTetris };
+  const run = runners[stop.game] || gameMemory;
+  teardown = run(gw, stop, onWin) || null;
+}
+
+function renderWin(n){
+  if (teardown){ try{ teardown(); }catch(e){} teardown = null; }
+  app.innerHTML = '';
+  const last = n >= HUNT.stops.length;
+  const scr = el('div','screen');
+  const w = el('div','win');
+  w.appendChild(el('div','eyebrow', last ? 'Final stop' : 'Stop ' + n + ' cleared'));
+  w.appendChild(el('h2', null, last ? 'River&rsquo;s end' : 'Nailed it'));
+
+  if (last){
+    w.appendChild(el('p', null, HUNT.outro));
+    const b = el('button','btn brass','See the full route');
+    b.addEventListener('click', ()=> go('#/done'));
+    w.appendChild(b);
+  } else {
+    const nx = HUNT.stops[n];
+    const L  = legInfo(HUNT.stops[n-1], nx);
+    w.appendChild(el('p', null, 'Next: <b>' + nx.name + '</b> — ' + L.m + ' m ' + L.dir + '.'));
+    w.appendChild(el('div','nextclue', nx.clue));
+    const b = el('button','btn','Follow the compass');
+    b.addEventListener('click', ()=> go('#/stop/' + (n+1)));
+    w.appendChild(b);
+    const r = el('button','btn ghost','Back to route'); r.style.marginTop='10px';
+    r.addEventListener('click', ()=> go('#/'));
+    w.appendChild(r);
+  }
+  scr.appendChild(w);
+  app.appendChild(scr);
+}
+
+function viewDone(){
+  const scr = el('div','screen');
+  const w = el('div','win');
+  w.appendChild(el('div','eyebrow', HUNT.region));
+  w.appendChild(el('h2', null, 'Hunt complete'));
+  w.appendChild(el('p', null, HUNT.outro));
+  const list = el('div','ledger');
+  HUNT.stops.forEach((st,i)=>{
+    const c = el('div','stopcard'); c.dataset.state = 'done';
+    c.appendChild(el('div','rivet','&#10003;'));
+    const b = el('div','sc-body');
+    b.appendChild(el('div','sc-name', st.name));
+    b.appendChild(el('div','sc-meta', st.lat.toFixed(5)+', '+st.lng.toFixed(5)));
+    c.appendChild(b); list.appendChild(c);
+  });
+  w.appendChild(list);
+  const r = el('button','btn ghost','Run it again'); r.style.marginTop='24px';
+  r.addEventListener('click', ()=>{ STATE={cleared:0}; saveState(STATE); go('#/'); });
+  w.appendChild(r);
+  scr.appendChild(w);
+  app.appendChild(scr);
+}
+
+/* ---------- shared: stage sizing ---------- */
+function makeStage(gw){
+  const stage = el('div','stage');
+  gw.appendChild(stage);
+  return stage;
+}
+function stageBox(stage, aspect){
+  const r = stage.getBoundingClientRect();
+  let w = Math.min(r.width, 420);
+  let h = w / aspect;
+  if (h > r.height){ h = r.height; w = h * aspect; }
+  return { w: Math.floor(w), h: Math.floor(h) };
+}
+
+/* ============================================================
+   GAME 1 — MEMORY
+   ============================================================ */
+function gameMemory(gw, stop, onWin){
+  const syms = (stop.symbols && stop.symbols.length >= 6) ? stop.symbols.slice(0,6)
+             : ['⚓','🔩','🪵','🐟','🧭','🔥'];
+  const hud = el('div','ghud');
+  const moves = el('b','','0');
+  hud.appendChild(el('span',null,'Pairs&nbsp;'));
+  const pairsN = el('b','','0/6'); hud.appendChild(pairsN);
+  hud.appendChild(el('div','spacer'));
+  hud.appendChild(el('span',null,'Flips&nbsp;')); hud.appendChild(moves);
+  gw.appendChild(hud);
+
+  const stage = makeStage(gw);
+  const grid = el('div','mgrid');
+  stage.appendChild(grid);
+
+  const deck = syms.concat(syms).sort(()=>Math.random()-0.5);
+  let open = [], lock = false, found = 0, flips = 0;
+
+  deck.forEach((s,i)=>{
+    const c = el('button','mcard');
+    c.dataset.up = '0'; c.dataset.sym = s; c.dataset.i = i;
+    c.appendChild(el('span','face', s));
+    c.addEventListener('click', ()=>{
+      if (lock || c.dataset.up === '1' || c.dataset.done === '1') return;
+      c.dataset.up = '1'; open.push(c);
+      flips++; moves.textContent = flips;
+      if (open.length === 2){
+        lock = true;
+        const [a,b] = open;
+        if (a.dataset.sym === b.dataset.sym){
+          setTimeout(()=>{
+            a.dataset.done='1'; b.dataset.done='1';
+            open = []; lock = false; found++;
+            pairsN.textContent = found + '/6';
+            if (found === 6) onWin();
+          }, 320);
+        } else {
+          setTimeout(()=>{ a.dataset.up='0'; b.dataset.up='0'; open=[]; lock=false; }, 700);
         }
-        50% {
-          opacity: 0.45;
-        }
       }
-      .btn {
-        display: block;
-        width: 100%;
-        padding: 17px 20px;
-        border: none;
-        border-radius: 2px;
-        background: var(--ink);
-        color: var(--paper);
-        font-family: var(--font-display);
-        font-size: 18px;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        text-align: center;
-        text-decoration: none;
-        cursor: pointer;
+    });
+    grid.appendChild(c);
+  });
+
+  gw.appendChild(el('div','arnote','Find all six pairs. Two taps at a time.'));
+  return null;
+}
+
+/* ============================================================
+   GAME 2 — BREAKOUT
+   ============================================================ */
+function gameBreakout(gw, stop, onWin){
+  const ROWS = Math.max(2, Math.min(6, stop.rows || 4)), COLS = 7;
+  const hud = el('div','ghud');
+  hud.appendChild(el('span',null,'Bricks&nbsp;')); const bN = el('b','','0'); hud.appendChild(bN);
+  hud.appendChild(el('div','spacer'));
+  hud.appendChild(el('span',null,'Lives&nbsp;')); const lN = el('b','','3'); hud.appendChild(lN);
+  gw.appendChild(hud);
+
+  const stage = makeStage(gw);
+  gw.appendChild(el('div','arnote','Drag anywhere below the bricks to move the bar. Clear every brick.'));
+
+  const box = stageBox(stage, 3/4);
+  const W = box.w, H = box.h;
+  const cv = el('canvas'); stage.appendChild(cv);
+  const ctx = fitCanvas(cv, W, H);
+
+  const bw = (W - 16) / COLS, bh = 16;
+  let bricks = [], lives = 3, alive = true, raf = 0;
+  function reset(full){
+    if (full){
+      bricks = [];
+      for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++)
+        bricks.push({ x: 8 + c*bw, y: 44 + r*(bh+6), w: bw-4, h: bh, on: true });
+      lives = 3; lN.textContent = lives;
+    }
+    px = W/2; ball.x = W/2; ball.y = H*0.62;
+    const a = (-60 - Math.random()*60) * Math.PI/180;
+    ball.vx = Math.cos(a) * spd; ball.vy = Math.sin(a) * spd;
+  }
+  const pw = Math.max(64, W*0.24), ph = 12;
+  let px = W/2, spd = Math.max(3.2, W/110);
+  const ball = { x:W/2, y:H*0.62, vx:0, vy:0, r: Math.max(5, W/56) };
+  reset(true);
+
+  function drag(e){
+    const t = e.touches ? e.touches[0] : e;
+    const r = cv.getBoundingClientRect();
+    px = Math.max(pw/2, Math.min(W-pw/2, t.clientX - r.left));
+    e.preventDefault();
+  }
+  cv.addEventListener('touchstart', drag, {passive:false});
+  cv.addEventListener('touchmove',  drag, {passive:false});
+  cv.addEventListener('mousemove',  e => { if (e.buttons) drag(e); });
+
+  function step(){
+    if (!alive) return;
+    raf = requestAnimationFrame(step);
+    ball.x += ball.vx; ball.y += ball.vy;
+    if (ball.x < ball.r){ ball.x = ball.r; ball.vx *= -1; }
+    if (ball.x > W-ball.r){ ball.x = W-ball.r; ball.vx *= -1; }
+    if (ball.y < ball.r){ ball.y = ball.r; ball.vy *= -1; }
+
+    const py = H - 34;
+    if (ball.vy > 0 && ball.y + ball.r >= py && ball.y + ball.r <= py + ph + 8 &&
+        ball.x > px - pw/2 - ball.r && ball.x < px + pw/2 + ball.r){
+      ball.y = py - ball.r;
+      const off = (ball.x - px) / (pw/2);
+      const ang = (-90 + off * 58) * Math.PI/180;
+      ball.vx = Math.cos(ang)*spd; ball.vy = Math.sin(ang)*spd;
+    }
+
+    for (const b of bricks){
+      if (!b.on) continue;
+      if (ball.x > b.x - ball.r && ball.x < b.x + b.w + ball.r &&
+          ball.y > b.y - ball.r && ball.y < b.y + b.h + ball.r){
+        b.on = false; ball.vy *= -1;
+        if (!bricks.some(z=>z.on)){ alive = false; cancelAnimationFrame(raf); onWin(); return; }
+        break;
       }
-      .btn--go {
-        background: var(--buoy);
+    }
+
+    if (ball.y - ball.r > H){
+      lives--; lN.textContent = Math.max(0,lives);
+      if (lives <= 0){ toast('Out of lives — bricks reset'); reset(true); }
+      else reset(false);
+    }
+
+    bN.textContent = bricks.filter(b=>b.on).length;
+
+    ctx.fillStyle = '#14232A'; ctx.fillRect(0,0,W,H);
+    bricks.forEach((b,i)=>{
+      if (!b.on) return;
+      ctx.fillStyle = ['#5FB3A1','#4E9C8C','#C9922F','#A87826','#7FBFB1','#3F8577'][Math.floor(i/COLS)%6];
+      ctx.fillRect(b.x, b.y, b.w, b.h);
+    });
+    ctx.fillStyle = '#E8E4D9'; ctx.fillRect(px-pw/2, py, pw, ph);
+    ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI*2);
+    ctx.fillStyle = '#5FB3A1'; ctx.fill();
+  }
+  raf = requestAnimationFrame(step);
+  return () => { alive = false; cancelAnimationFrame(raf); };
+}
+
+/* ============================================================
+   GAME 3 — SNAKE
+   ============================================================ */
+function gameSnake(gw, stop, onWin){
+  const TARGET = stop.food || 8;
+  const N = 14;
+
+  const hud = el('div','ghud');
+  hud.appendChild(el('span',null,'Caught&nbsp;')); const sN = el('b','','0/'+TARGET); hud.appendChild(sN);
+  hud.appendChild(el('div','spacer'));
+  hud.appendChild(el('span',null,'Length&nbsp;')); const lN = el('b','','3'); hud.appendChild(lN);
+  gw.appendChild(hud);
+
+  const stage = makeStage(gw);
+  const pad = el('div','pad');
+  const r1 = el('div','padrow'), r2 = el('div','padrow');
+  const spL = el('div','key'); spL.style.visibility='hidden'; spL.textContent='.';
+  const up = el('button','key','&#9650;');
+  const spR = el('div','key'); spR.style.visibility='hidden'; spR.textContent='.';
+  r1.appendChild(spL); r1.appendChild(up); r1.appendChild(spR);
+  const lf = el('button','key','&#9664;'), dn = el('button','key','&#9660;'), rt = el('button','key','&#9654;');
+  r2.appendChild(lf); r2.appendChild(dn); r2.appendChild(rt);
+  pad.appendChild(r1); pad.appendChild(r2);
+  gw.appendChild(pad);
+  gw.appendChild(el('div','arnote','Swipe on the board or use the pad. Walls and your own tail end the run.'));
+
+  const box = stageBox(stage, 1);
+  const W = box.w, H = box.w;
+  const cv = el('canvas'); stage.appendChild(cv);
+  const ctx = fitCanvas(cv, W, H);
+  const cell = W / N;
+
+  let snake, dir, queue, food, tick, acc, last, raf = 0, alive = true;
+  function reset(){
+    snake = [{x:7,y:9},{x:7,y:10},{x:7,y:11}];
+    dir = {x:0,y:-1}; queue = []; tick = 200; acc = 0; last = 0;
+    placeFood(); sN.textContent = '0/'+TARGET; lN.textContent = snake.length;
+    eaten = 0;
+  }
+  let eaten = 0;
+  function placeFood(){
+    do { food = { x: Math.floor(Math.random()*N), y: Math.floor(Math.random()*N) }; }
+    while (snake.some(s=>s.x===food.x && s.y===food.y));
+  }
+  reset();
+
+  function turn(nx,ny){
+    const base = queue.length ? queue[queue.length-1] : dir;
+    if (base.x === -nx && base.y === -ny) return;      // no instant reversal
+    if (base.x === nx && base.y === ny) return;
+    if (queue.length < 2) queue.push({x:nx,y:ny});
+  }
+
+  // swipe
+  let sx=0, sy=0;
+  cv.addEventListener('touchstart', e=>{ const t=e.touches[0]; sx=t.clientX; sy=t.clientY; e.preventDefault(); }, {passive:false});
+  cv.addEventListener('touchend', e=>{
+    const t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy;
+    if (Math.abs(dx) < 18 && Math.abs(dy) < 18) return;
+    if (Math.abs(dx) > Math.abs(dy)) turn(dx>0?1:-1, 0); else turn(0, dy>0?1:-1);
+  });
+
+  const bind = (node, fx, fy) => {
+    const h = e => { e.preventDefault(); turn(fx,fy); };
+    node.addEventListener('touchstart', h, {passive:false});
+    node.addEventListener('click', e=>{ e.preventDefault(); turn(fx,fy); });
+  };
+  bind(up,0,-1); bind(dn,0,1); bind(lf,-1,0); bind(rt,1,0);
+  const onKey = e => {
+    const m = {ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0]}[e.key];
+    if (m){ e.preventDefault(); turn(m[0],m[1]); }
+  };
+  window.addEventListener('keydown', onKey);
+
+  function advance(){
+    if (queue.length) dir = queue.shift();
+    const head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
+    if (head.x < 0 || head.y < 0 || head.x >= N || head.y >= N ||
+        snake.some(s=>s.x===head.x && s.y===head.y)){
+      toast('Run over — back to the start'); reset(); return;
+    }
+    snake.unshift(head);
+    if (head.x === food.x && head.y === food.y){
+      eaten++; sN.textContent = eaten + '/' + TARGET; lN.textContent = snake.length;
+      tick = Math.max(95, tick - 9);
+      if (eaten >= TARGET){ alive = false; cancelAnimationFrame(raf); onWin(); return; }
+      placeFood();
+    } else {
+      snake.pop();
+    }
+  }
+
+  function loop(ts){
+    if (!alive) return;
+    raf = requestAnimationFrame(loop);
+    if (!last) last = ts;
+    acc += ts - last; last = ts;
+    while (acc >= tick){ acc -= tick; advance(); if (!alive) return; }
+
+    ctx.fillStyle = '#14232A'; ctx.fillRect(0,0,W,H);
+    ctx.strokeStyle = 'rgba(51,71,78,.5)'; ctx.lineWidth = 1;
+    for (let i=1;i<N;i++){
+      ctx.beginPath(); ctx.moveTo(i*cell,0); ctx.lineTo(i*cell,H); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0,i*cell); ctx.lineTo(W,i*cell); ctx.stroke();
+    }
+    // food — a brass rivet
+    ctx.beginPath(); ctx.arc((food.x+.5)*cell, (food.y+.5)*cell, cell*0.32, 0, Math.PI*2);
+    ctx.fillStyle = '#C9922F'; ctx.fill();
+    snake.forEach((s,i)=>{
+      ctx.fillStyle = i === 0 ? '#E8E4D9' : '#5FB3A1';
+      ctx.globalAlpha = i === 0 ? 1 : Math.max(.45, 1 - i/(snake.length+4));
+      ctx.fillRect(s.x*cell+1.5, s.y*cell+1.5, cell-3, cell-3);
+    });
+    ctx.globalAlpha = 1;
+  }
+  raf = requestAnimationFrame(loop);
+  return () => { alive = false; cancelAnimationFrame(raf); window.removeEventListener('keydown', onKey); };
+}
+
+/* ============================================================
+   GAME 4 — RACER (dodge the traffic)
+   ============================================================ */
+function gameRacer(gw, stop, onWin){
+  const GOAL = stop.goal || 900;
+  const LANES = 3;
+
+  const hud = el('div','ghud');
+  hud.appendChild(el('span',null,'Distance&nbsp;')); const dN = el('b','','0%'); hud.appendChild(dN);
+  hud.appendChild(el('div','spacer'));
+  hud.appendChild(el('span',null,'Speed&nbsp;')); const spN = el('b','','1.0x'); hud.appendChild(spN);
+  gw.appendChild(hud);
+
+  const stage = makeStage(gw);
+  const pad = el('div','pad');
+  const row = el('div','padrow');
+  const lf = el('button','key','&#9664;'), rt = el('button','key','&#9654;');
+  row.appendChild(lf); row.appendChild(rt);
+  pad.appendChild(row); gw.appendChild(pad);
+  gw.appendChild(el('div','arnote','Tap a side of the road or use the arrows. Hit anything and you restart the leg.'));
+
+  const box = stageBox(stage, 3/5);
+  const W = box.w, H = box.h;
+  const cv = el('canvas'); stage.appendChild(cv);
+  const ctx = fitCanvas(cv, W, H);
+  const roadW = W * 0.82, roadX = (W - roadW)/2, laneW = roadW / LANES;
+  const carW = laneW * 0.56, carH = carW * 1.7;
+
+  let lane, carX, obs, dist, speed, stripe, last, raf = 0, alive = true, spawnGap, sinceSpawn;
+  function reset(soft){
+    lane = 1; carX = roadX + laneW*1.5; obs = []; dist = 0;
+    speed = 0.22; stripe = 0; spawnGap = 900; sinceSpawn = 0; last = 0;
+    dN.textContent = '0%'; spN.textContent = '1.0x';
+  }
+  reset();
+
+  const move = d => { lane = Math.max(0, Math.min(LANES-1, lane + d)); };
+
+  [[lf,-1],[rt,1]].forEach(([n,d])=>{
+    const h = e => { e.preventDefault(); move(d); };
+    n.addEventListener('touchstart', h, {passive:false});
+    n.addEventListener('click', h);
+  });
+  cv.addEventListener('touchstart', e=>{
+    e.preventDefault();
+    const r = cv.getBoundingClientRect();
+    move(e.touches[0].clientX - r.left < W/2 ? -1 : 1);
+  }, {passive:false});
+  const onKey = e => {
+    if (e.key === 'ArrowLeft'){ e.preventDefault(); move(-1); }
+    if (e.key === 'ArrowRight'){ e.preventDefault(); move(1); }
+  };
+  window.addEventListener('keydown', onKey);
+
+  function spawn(){
+    // block one or two lanes, never all three
+    const free = Math.floor(Math.random()*LANES);
+    const two  = Math.random() < 0.35;
+    const blocked = [];
+    for (let i=0;i<LANES;i++) if (i !== free) blocked.push(i);
+    const pick = two ? blocked : [blocked[Math.floor(Math.random()*blocked.length)]];
+    pick.forEach(l => obs.push({ lane:l, y:-carH, hue: Math.random()<.5 ? '#C9922F' : '#D96A5B' }));
+  }
+
+  function loop(ts){
+    if (!alive) return;
+    raf = requestAnimationFrame(loop);
+    if (!last) last = ts;
+    let dt = Math.min(48, ts - last); last = ts;
+
+    const targetX = roadX + laneW*(lane + .5);
+    carX += (targetX - carX) * 0.24;
+
+    const px = speed * dt;
+    dist += px; stripe = (stripe + px) % 44;
+    speed = Math.min(0.62, 0.22 + (dist/GOAL) * 0.4);
+    spawnGap = Math.max(360, 900 - (dist/GOAL) * 520);
+    sinceSpawn += dt;
+    if (sinceSpawn > spawnGap){ sinceSpawn = 0; spawn(); }
+
+    obs.forEach(o => o.y += px * 1.6);
+    obs = obs.filter(o => o.y < H + carH);
+
+    const carY = H - carH - 18;
+    for (const o of obs){
+      const ox = roadX + laneW*(o.lane + .5);
+      if (Math.abs(ox - carX) < carW*0.85 && o.y + carH > carY + 6 && o.y < carY + carH - 6){
+        toast('Crashed — leg restarts'); reset(); break;
       }
-      .btn--quiet {
-        background: none;
-        color: var(--depth);
-        border: 1px solid rgba(15, 34, 51, 0.3);
+    }
+
+    dN.textContent = Math.min(100, Math.round(dist/GOAL*100)) + '%';
+    spN.textContent = (speed/0.22).toFixed(1) + 'x';
+    if (dist >= GOAL){ alive = false; cancelAnimationFrame(raf); onWin(); return; }
+
+    /* draw */
+    ctx.fillStyle = '#0E1518'; ctx.fillRect(0,0,W,H);
+    ctx.fillStyle = '#14232A'; ctx.fillRect(roadX, 0, roadW, H);
+    ctx.strokeStyle = 'rgba(232,228,217,.28)'; ctx.lineWidth = 3;
+    for (let l=1;l<LANES;l++){
+      const x = roadX + laneW*l;
+      for (let y = -44 + stripe; y < H; y += 44){
+        ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y+22); ctx.stroke();
       }
-      .btn:active {
-        transform: translateY(1px);
-      }
-      .btn:focus-visible,
-      a:focus-visible {
-        outline: 3px solid var(--brass);
-        outline-offset: 2px;
-      }
-      .btn[disabled] {
-        opacity: 0.4;
-        pointer-events: none;
-      }
-      .btn + .btn {
-        margin-top: 10px;
-      }
-      .status {
-        padding: 14px 16px;
-        border: 1px solid rgba(15, 34, 51, 0.2);
-        border-left: 3px solid var(--depth);
-        background: var(--paper-2);
-        font-size: 15px;
-      }
-      .status--go {
-        border-left-color: var(--buoy);
-      }
-      .foot {
-        margin-top: 32px;
-        font-family: var(--font-mono);
-        font-size: 11px;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        color: rgba(15, 34, 51, 0.5);
-        display: flex;
-        justify-content: space-between;
-        gap: 12px;
-      }
-      .foot button {
-        background: none;
-        border: none;
-        padding: 0;
-        font: inherit;
-        color: inherit;
-        text-decoration: underline;
-        cursor: pointer;
-      }
-      .devbar {
-        background: var(--brass);
-        color: #fff;
-        font-family: var(--font-mono);
-        font-size: 11px;
-        letter-spacing: 0.14em;
-        text-transform: uppercase;
-        text-align: center;
-        padding: 7px 10px;
-      }
-      .devbar button {
-        background: none;
-        border: none;
-        color: #fff;
-        text-decoration: underline;
-        font: inherit;
-        cursor: pointer;
-      }
-      /* AR */
-      #ar {
-        position: fixed;
-        inset: 0;
-        background: var(--ink);
-        display: none;
-        z-index: 50;
-      }
-      #ar.is-live {
-        display: block;
-      }
-      #ar canvas {
-        width: 100%;
-        height: 100%;
-        display: block;
-      }
-      .hud {
-        position: fixed;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        padding: 20px;
-        padding-bottom: calc(20px + env(safe-area-inset-bottom));
-        background: linear-gradient(transparent, rgba(15, 34, 51, 0.9) 40%);
-      }
-      .readout {
-        font-family: var(--font-mono);
-        font-size: 12px;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-        color: var(--paper);
-        text-align: center;
-        margin-bottom: 12px;
-        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
-      }
-      /* games */
-      .game-head {
-        padding: 14px 20px;
-        border-bottom: 1px solid rgba(15, 34, 51, 0.2);
-        display: flex;
-        justify-content: space-between;
-        align-items: baseline;
-        gap: 12px;
-      }
-      .game-head .title {
-        font-family: var(--font-display);
-        text-transform: uppercase;
-        font-size: 17px;
-      }
-      .game-head .score {
-        font-family: var(--font-mono);
-        font-size: 12px;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        color: var(--depth);
-      }
-      .game-stage {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 16px;
-      }
-      .game-stage canvas {
-        background: var(--paper-2);
-        border: 1px solid rgba(15, 34, 51, 0.25);
-        touch-action: none;
-        max-width: 100%;
-      }
-      .mem-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 10px;
-        width: 100%;
-        max-width: 340px;
-      }
-      .card {
-        aspect-ratio: 3 / 4;
-        border: 1px solid rgba(15, 34, 51, 0.3);
-        border-radius: 2px;
-        background: var(--ink);
-        font-size: 30px;
-        display: grid;
-        place-items: center;
-        cursor: pointer;
-        padding: 0;
-        touch-action: manipulation;
-        -webkit-user-select: none;
-        user-select: none;
-        transition: background 0.18s;
-      }
-      /* The face is a real element, shown and hidden with visibility.
-         Colouring text transparent does not hide emoji reliably. */
-      .card .face {
-        visibility: hidden;
-        line-height: 1;
-      }
-      .card.is-up .face,
-      .card.is-matched .face {
-        visibility: visible;
-      }
-      .card.is-up {
-        background: var(--paper-2);
-      }
-      .card.is-matched {
-        background: var(--paper-2);
-        border-color: var(--brass);
-        opacity: 0.55;
-      }
-      .pad {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 8px;
-        width: 100%;
-        max-width: 340px;
-        margin-top: 14px;
-        touch-action: none;
-      }
-      .pad button {
-        padding: 16px 0;
-        font-size: 20px;
-        border: 1px solid rgba(15, 34, 51, 0.3);
-        background: var(--paper-2);
-        color: var(--ink);
-        border-radius: 2px;
-        cursor: pointer;
-        /* none: no double-tap zoom, no scroll hijack, no 300ms delay */
-        touch-action: none;
-        -webkit-user-select: none;
-        user-select: none;
-      }
-      .pad button:active {
-        background: var(--ink);
-        color: var(--paper);
-      }
-      .hint {
-        font-family: var(--font-mono);
-        font-size: 11px;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        color: var(--depth);
-        margin-top: 14px;
-        text-align: center;
-      }
-      #boot {
-        padding: 24px 20px;
-        font-family: var(--font-mono);
-        font-size: 13px;
-        color: var(--buoy);
-      }
-      @media (prefers-reduced-motion: reduce) {
-        * {
-          animation: none !important;
-          transition: none !important;
-        }
-      }
-    </style>
-  </head>
-
-  <body>
-    <div id="devbar"></div>
-    <div id="app">
-      <div id="boot">Loading&hellip;</div>
-    </div>
-
-    <div id="ar">
-      <canvas id="cv"></canvas>
-      <div class="hud">
-        <div class="readout" id="readout">Finding you&hellip;</div>
-        <button class="btn btn--go" id="playBtn" type="button" disabled>
-          Get closer
-        </button>
-        <button class="btn btn--quiet" id="backBtn" type="button" style="margin-top:10px">
-          Give up for now
-        </button>
-      </div>
-    </div>
-
-    <video id="vid" playsinline muted style="display: none"></video>
-
-    <script>
-      /* =========================================================
-         ===============  YOUR HUNT — EDIT THIS  =================
-         =========================================================
-
-         Coordinates: open Google Maps, right-click the exact spot,
-         click the numbers at the top of the menu to copy them.
-         First number is lat, second is lng.
-
-         game: "memory" | "breakout" | "tetris"
-         radius: metres the player must be within
-      */
-
-      var HUNT = {
-        /* id keeps this hunt's progress separate from other hunts hosted on
-           the same domain. Give every city its own id. */
-        id: "oslo",
-        name: "GTA 6",
-        subtitle: "Grand Treasure Adventure \u00b7 Oslo",
-        finale:
-          "Three worlds, three trials, all cleared. Show this screen at the meeting point to claim the prize.",
-
-        stops: [
-          {
-            name: "The Doors of Durin",
-            lat: 59.9187179,
-            lng: 10.6313207,
-            radius: 20,
-            clue:
-              "The old gate under the mountain opens only for a friend. Stand still until the marker shows itself.",
-            game: "memory",
-            symbols: ["\ud83d\udc8d", "\u2694\ufe0f", "\ud83c\udf33", "\u26f0\ufe0f", "\ud83d\udc41\ufe0f", "\ud83d\uddfc"]
-          },
-          {
-            name: "The Dark Portal",
-            lat: 59.9177493,
-            lng: 10.6324311,
-            radius: 20,
-            clue:
-              "The portal burns to the south-southeast, roughly a hundred and twenty paces off. Break through what stands in the way.",
-            game: "breakout",
-            rows: 4
-          },
-          {
-            name: "The Getaway",
-            lat: 59.9166878,
-            lng: 10.6333182,
-            radius: 20,
-            clue:
-              "Heat's on. Keep going the same way, another hundred and twenty paces, and don't stop moving. Stack the crates and you're clear.",
-            game: "tetris",
-            lines: 4
-          }
-        ]
-      };
-
-      /* =========================================================
-         =========  ENGINE — you should not need to edit  ========
-         ========================================================= */
-
-      (function () {
-        "use strict";
-
-        /* localStorage is scoped to the origin, not the path, so two hunts on
-           the same github.io domain would otherwise share one progress record.
-           Folding the hunt id into the key keeps each city separate. */
-        var KEY = "hunt." + (HUNT.id || "default") + ".progress.v1";
-        var DEVKEY = "fjordhunt.dev";
-
-        /* ---------- storage ---------- */
-        function load() {
-          try {
-            var p = JSON.parse(localStorage.getItem(KEY));
-            if (p && Object.prototype.toString.call(p.done) === "[object Array]")
-              return p;
-          } catch (e) {}
-          return { done: [] };
-        }
-        function save(p) {
-          try {
-            localStorage.setItem(KEY, JSON.stringify(p));
-          } catch (e) {}
-        }
-        function isDone(i) {
-          return load().done.indexOf(i) > -1;
-        }
-        function complete(i) {
-          var p = load();
-          if (p.done.indexOf(i) < 0) p.done.push(i);
-          p.updated = Date.now();
-          save(p);
-        }
-        function resetAll() {
-          try {
-            localStorage.removeItem(KEY);
-          } catch (e) {}
-        }
-        function currentIndex() {
-          var p = load();
-          for (var i = 0; i < HUNT.stops.length; i++)
-            if (p.done.indexOf(i) < 0) return i;
-          return -1;
-        }
-
-        function devOn() {
-          try {
-            return localStorage.getItem(DEVKEY) === "1";
-          } catch (e) {
-            return false;
-          }
-        }
-        function setDev(on) {
-          try {
-            if (on) localStorage.setItem(DEVKEY, "1");
-            else localStorage.removeItem(DEVKEY);
-          } catch (e) {}
-        }
-
-        function param(name) {
-          var m = new RegExp("[?&]" + name + "=([^&#]*)").exec(location.search);
-          return m ? decodeURIComponent(m[1]) : null;
-        }
-        if (param("dev") === "1") setDev(true);
-        if (param("dev") === "0") setDev(false);
-
-        /* ---------- geo ---------- */
-        function toRad(d) {
-          return (d * Math.PI) / 180;
-        }
-        function distance(la1, ln1, la2, ln2) {
-          var R = 6371000,
-            dLa = toRad(la2 - la1),
-            dLn = toRad(ln2 - ln1);
-          var a =
-            Math.sin(dLa / 2) * Math.sin(dLa / 2) +
-            Math.cos(toRad(la1)) *
-              Math.cos(toRad(la2)) *
-              Math.sin(dLn / 2) *
-              Math.sin(dLn / 2);
-          return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        }
-        function bearing(la1, ln1, la2, ln2) {
-          var y = Math.sin(toRad(ln2 - ln1)) * Math.cos(toRad(la2));
-          var x =
-            Math.cos(toRad(la1)) * Math.sin(toRad(la2)) -
-            Math.sin(toRad(la1)) *
-              Math.cos(toRad(la2)) *
-              Math.cos(toRad(ln2 - ln1));
-          return (((Math.atan2(y, x) * 180) / Math.PI) + 360) % 360;
-        }
-        function angleDelta(a, b) {
-          return ((((b - a) % 360) + 540) % 360) - 180;
-        }
-        function fmt(m) {
-          return m < 1000 ? Math.round(m) + " m" : (m / 1000).toFixed(1) + " km";
-        }
-
-        /* ---------- dom helpers ---------- */
-        var app = document.getElementById("app");
-        var arEl = document.getElementById("ar");
-        var cv = document.getElementById("cv");
-        var vid = document.getElementById("vid");
-        var readout = document.getElementById("readout");
-        var playBtn = document.getElementById("playBtn");
-        var backBtn = document.getElementById("backBtn");
-        var ctx = cv.getContext("2d");
-
-        function esc(s) {
-          return String(s).replace(/[&<>"]/g, function (c) {
-            return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
-          });
-        }
-        function go(hash) {
-          location.hash = hash;
-        }
-
-        /* ---------- teardown between views ---------- */
-        var cleanup = [];
-        function onLeave(fn) {
-          cleanup.push(fn);
-        }
-        function teardown() {
-          while (cleanup.length) {
-            try {
-              cleanup.pop()();
-            } catch (e) {}
-          }
-          arEl.classList.remove("is-live");
-        }
-
-        /* =========================================================
-           GAMES
-           ========================================================= */
-        var GAMES = {};
-
-        GAMES.memory = {
-          label: "Match the pairs",
-          mount: function (stage, stop, api) {
-            var syms = (
-              stop.symbols && stop.symbols.length
-                ? stop.symbols
-                : ["\u2693\ufe0f", "\ud83e\udded", "\ud83d\udd6f\ufe0f", "\ud83e\udd89", "\ud83d\udd11", "\u26f5\ufe0f"]
-            ).slice(0, 6);
-
-            var deck = syms.concat(syms);
-            for (var i = deck.length - 1; i > 0; i--) {
-              var j = Math.floor(Math.random() * (i + 1)),
-                t = deck[i];
-              deck[i] = deck[j];
-              deck[j] = t;
-            }
-
-            var grid = document.createElement("div");
-            grid.className = "mem-grid";
-            stage.appendChild(grid);
-            var hint = document.createElement("p");
-            hint.className = "hint";
-            hint.textContent = "Tap two cards";
-            stage.appendChild(hint);
-
-            var first = null,
-              busy = false,
-              matched = 0,
-              moves = 0;
-            api.score("0 moves");
-
-            deck.forEach(function (sym) {
-              var card = document.createElement("button");
-              card.className = "card";
-              card.type = "button";
-              var face = document.createElement("span");
-              face.className = "face";
-              face.textContent = sym;
-              card.appendChild(face);
-              card.setAttribute("data-sym", sym);
-              card.setAttribute("aria-label", "Face-down card");
-              card.addEventListener("click", function () {
-                if (busy || card.className.indexOf("is-up") > -1) return;
-                if (card.className.indexOf("is-matched") > -1) return;
-                card.className = "card is-up";
-                if (!first) {
-                  first = card;
-                  return;
-                }
-                moves++;
-                api.score(moves + (moves === 1 ? " move" : " moves"));
-                if (
-                  first.getAttribute("data-sym") === card.getAttribute("data-sym")
-                ) {
-                  first.className = "card is-matched";
-                  card.className = "card is-matched";
-                  first = null;
-                  matched++;
-                  if (matched === syms.length) {
-                    hint.textContent = "All pairs found";
-                    setTimeout(api.win, 450);
-                  }
-                } else {
-                  busy = true;
-                  var a = first,
-                    b = card;
-                  first = null;
-                  setTimeout(function () {
-                    a.className = "card";
-                    b.className = "card";
-                    busy = false;
-                  }, 700);
-                }
-              });
-              grid.appendChild(card);
-            });
-
-            return function () {};
-          }
-        };
-
-        GAMES.breakout = {
-          label: "Clear the bricks",
-          mount: function (stage, stop, api) {
-            var W = 320,
-              H = 440;
-            var c = document.createElement("canvas");
-            c.width = W;
-            c.height = H;
-            c.style.width = "min(320px, 92vw)";
-            stage.appendChild(c);
-            var hint = document.createElement("p");
-            hint.className = "hint";
-            hint.textContent = "Drag to move \u00b7 tap to launch";
-            stage.appendChild(hint);
-            var g = c.getContext("2d");
-
-            var COLS = 7,
-              ROWS = Math.max(2, Math.min(6, stop.rows || 4)),
-              PAD = 6;
-            var BW = (W - PAD * (COLS + 1)) / COLS,
-              BH = 16;
-            var bricks = [];
-            for (var r = 0; r < ROWS; r++)
-              for (var cc = 0; cc < COLS; cc++)
-                bricks.push({
-                  x: PAD + cc * (BW + PAD),
-                  y: 60 + r * (BH + PAD),
-                  alive: true,
-                  row: r
-                });
-
-            var paddle = { w: 74, h: 11, x: W / 2 - 37, y: H - 34 };
-            var ball = { x: W / 2, y: paddle.y - 8, r: 6, vx: 0, vy: 0 };
-            var lives = 3,
-              stuck = true,
-              running = true,
-              alive = bricks.length;
-
-            function sc() {
-              api.score(alive + " left \u00b7 " + lives + " lives");
-            }
-            sc();
-
-            function moveTo(clientX) {
-              var rect = c.getBoundingClientRect();
-              var x = ((clientX - rect.left) / rect.width) * W;
-              paddle.x = Math.max(0, Math.min(W - paddle.w, x - paddle.w / 2));
-            }
-            function down(e) {
-              e.preventDefault();
-              var p = e.touches ? e.touches[0] : e;
-              moveTo(p.clientX);
-              if (stuck) {
-                stuck = false;
-                ball.vx = (Math.random() > 0.5 ? 1 : -1) * 2.4;
-                ball.vy = -4.2;
-              }
-            }
-            function move(e) {
-              var p = e.touches ? e.touches[0] : e;
-              if (!p) return;
-              e.preventDefault();
-              moveTo(p.clientX);
-            }
-            c.addEventListener("touchstart", down, { passive: false });
-            c.addEventListener("touchmove", move, { passive: false });
-            c.addEventListener("mousedown", down);
-            c.addEventListener("mousemove", function (e) {
-              if (e.buttons) move(e);
-            });
-
-            function step() {
-              if (stuck) {
-                ball.x = paddle.x + paddle.w / 2;
-                ball.y = paddle.y - 8;
-                return;
-              }
-              ball.x += ball.vx;
-              ball.y += ball.vy;
-              if (ball.x - ball.r < 0) {
-                ball.x = ball.r;
-                ball.vx *= -1;
-              }
-              if (ball.x + ball.r > W) {
-                ball.x = W - ball.r;
-                ball.vx *= -1;
-              }
-              if (ball.y - ball.r < 0) {
-                ball.y = ball.r;
-                ball.vy *= -1;
-              }
-              if (
-                ball.vy > 0 &&
-                ball.y + ball.r >= paddle.y &&
-                ball.y - ball.r <= paddle.y + paddle.h &&
-                ball.x >= paddle.x - 4 &&
-                ball.x <= paddle.x + paddle.w + 4
-              ) {
-                ball.y = paddle.y - ball.r;
-                var hit = (ball.x - (paddle.x + paddle.w / 2)) / (paddle.w / 2);
-                ball.vx = hit * 4.2;
-                ball.vy = -Math.max(3.2, Math.abs(ball.vy));
-              }
-              for (var i = 0; i < bricks.length; i++) {
-                var b = bricks[i];
-                if (!b.alive) continue;
-                if (
-                  ball.x + ball.r > b.x &&
-                  ball.x - ball.r < b.x + BW &&
-                  ball.y + ball.r > b.y &&
-                  ball.y - ball.r < b.y + BH
-                ) {
-                  b.alive = false;
-                  alive--;
-                  sc();
-                  var ox = Math.min(
-                    ball.x + ball.r - b.x,
-                    b.x + BW - (ball.x - ball.r)
-                  );
-                  var oy = Math.min(
-                    ball.y + ball.r - b.y,
-                    b.y + BH - (ball.y - ball.r)
-                  );
-                  if (ox < oy) ball.vx *= -1;
-                  else ball.vy *= -1;
-                  if (alive === 0) {
-                    running = false;
-                    hint.textContent = "Bricks cleared";
-                    setTimeout(api.win, 350);
-                  }
-                  break;
-                }
-              }
-              if (ball.y - ball.r > H) {
-                lives--;
-                if (lives <= 0) {
-                  lives = 3;
-                  bricks.forEach(function (b) {
-                    b.alive = true;
-                  });
-                  alive = bricks.length;
-                  hint.textContent = "Reset \u2014 try again";
-                }
-                sc();
-                stuck = true;
-              }
-            }
-
-            var rowColors = [
-              "#0f2233",
-              "#1e4b6b",
-              "#a9761f",
-              "#d8402a",
-              "#1e4b6b",
-              "#0f2233"
-            ];
-            function draw() {
-              g.fillStyle = "#d6e0dc";
-              g.fillRect(0, 0, W, H);
-              bricks.forEach(function (b) {
-                if (!b.alive) return;
-                g.fillStyle = rowColors[b.row % rowColors.length];
-                g.fillRect(b.x, b.y, BW, BH);
-              });
-              g.fillStyle = "#0f2233";
-              g.fillRect(paddle.x, paddle.y, paddle.w, paddle.h);
-              g.fillStyle = "#d8402a";
-              g.beginPath();
-              g.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
-              g.fill();
-              if (stuck) {
-                g.fillStyle = "rgba(15,34,51,0.65)";
-                g.font = "13px ui-monospace, monospace";
-                g.textAlign = "center";
-                g.fillText("TAP TO LAUNCH", W / 2, H - 70);
-              }
-            }
-
-            var raf;
-            (function loop() {
-              if (!running) return;
-              step();
-              draw();
-              raf = requestAnimationFrame(loop);
-            })();
-
-            return function () {
-              running = false;
-              cancelAnimationFrame(raf);
-            };
-          }
-        };
-
-        GAMES.tetris = {
-          label: "Clear the lines",
-          mount: function (stage, stop, api) {
-            var COLS = 10,
-              ROWS = 18,
-              CELL = 17;
-            var TARGET = Math.max(1, stop.lines || 4);
-
-            var c = document.createElement("canvas");
-            c.width = COLS * CELL;
-            c.height = ROWS * CELL;
-            c.style.width = "240px";
-            stage.appendChild(c);
-            var g = c.getContext("2d");
-
-            var pad = document.createElement("div");
-            pad.className = "pad";
-            pad.innerHTML =
-              '<button type="button" data-k="left">\u2190</button>' +
-              '<button type="button" data-k="rot">\u21bb</button>' +
-              '<button type="button" data-k="right">\u2192</button>' +
-              '<button type="button" data-k="drop">\u2193</button>';
-            stage.appendChild(pad);
-
-            var hint = document.createElement("p");
-            hint.className = "hint";
-            hint.textContent = "Clear " + TARGET + " lines";
-            stage.appendChild(hint);
-
-            var SHAPES = {
-              I: [[1, 1, 1, 1]],
-              O: [[1, 1], [1, 1]],
-              T: [[0, 1, 0], [1, 1, 1]],
-              S: [[0, 1, 1], [1, 1, 0]],
-              Z: [[1, 1, 0], [0, 1, 1]],
-              J: [[1, 0, 0], [1, 1, 1]],
-              L: [[0, 0, 1], [1, 1, 1]]
-            };
-            var KEYS = ["I", "O", "T", "S", "Z", "J", "L"];
-            var COLORS = {
-              I: "#1e4b6b",
-              O: "#a9761f",
-              T: "#d8402a",
-              S: "#0f2233",
-              Z: "#1e4b6b",
-              J: "#a9761f",
-              L: "#0f2233"
-            };
-
-            var board = [];
-            for (var r = 0; r < ROWS; r++) {
-              var row = [];
-              for (var cc = 0; cc < COLS; cc++) row.push(null);
-              board.push(row);
-            }
-
-            var piece = null,
-              lines = 0,
-              running = true,
-              acc = 0,
-              last = 0,
-              raf;
-
-            function sc() {
-              api.score(lines + " / " + TARGET + " lines");
-            }
-            sc();
-
-            function emptyRow() {
-              var a = [];
-              for (var i = 0; i < COLS; i++) a.push(null);
-              return a;
-            }
-            function collides(m, px, py) {
-              for (var r = 0; r < m.length; r++)
-                for (var c2 = 0; c2 < m[r].length; c2++) {
-                  if (!m[r][c2]) continue;
-                  var x = px + c2,
-                    y = py + r;
-                  if (x < 0 || x >= COLS || y >= ROWS) return true;
-                  if (y >= 0 && board[y][x]) return true;
-                }
-              return false;
-            }
-            function spawn() {
-              var k = KEYS[Math.floor(Math.random() * KEYS.length)];
-              var m = SHAPES[k].map(function (rw) {
-                return rw.slice();
-              });
-              piece = { k: k, m: m, x: Math.floor((COLS - m[0].length) / 2), y: 0 };
-              if (collides(piece.m, piece.x, piece.y)) {
-                for (var r = 0; r < 6; r++) board[r] = emptyRow();
-                hint.textContent = "Stack cleared \u2014 keep going";
-              }
-            }
-            function merge() {
-              for (var r = 0; r < piece.m.length; r++)
-                for (var c2 = 0; c2 < piece.m[r].length; c2++)
-                  if (piece.m[r][c2] && piece.y + r >= 0)
-                    board[piece.y + r][piece.x + c2] = piece.k;
-            }
-            function clearLines() {
-              var cleared = 0;
-              for (var r = ROWS - 1; r >= 0; r--) {
-                var full = true;
-                for (var c2 = 0; c2 < COLS; c2++)
-                  if (!board[r][c2]) {
-                    full = false;
-                    break;
-                  }
-                if (full) {
-                  board.splice(r, 1);
-                  board.unshift(emptyRow());
-                  cleared++;
-                  r++;
-                }
-              }
-              if (cleared) {
-                lines += cleared;
-                sc();
-                if (lines >= TARGET) {
-                  running = false;
-                  hint.textContent = "Target reached";
-                  setTimeout(api.win, 350);
-                }
-              }
-            }
-            function rotate() {
-              var m = piece.m,
-                out = [];
-              for (var c2 = 0; c2 < m[0].length; c2++) {
-                var rw = [];
-                for (var r = m.length - 1; r >= 0; r--) rw.push(m[r][c2]);
-                out.push(rw);
-              }
-              var kicks = [0, -1, 1, -2, 2];
-              for (var i = 0; i < kicks.length; i++)
-                if (!collides(out, piece.x + kicks[i], piece.y)) {
-                  piece.m = out;
-                  piece.x += kicks[i];
-                  return;
-                }
-            }
-            function mv(dx) {
-              if (!collides(piece.m, piece.x + dx, piece.y)) piece.x += dx;
-            }
-            function softDrop() {
-              if (!collides(piece.m, piece.x, piece.y + 1)) piece.y++;
-              else {
-                merge();
-                clearLines();
-                if (running) spawn();
-              }
-            }
-
-            function padAction(k) {
-              if (!k || !running || !piece) return;
-              if (k === "left") mv(-1);
-              else if (k === "right") mv(1);
-              else if (k === "rot") rotate();
-              else if (k === "drop") softDrop();
-              else return;
-              draw();
-            }
-
-            /* Handling touchstart and calling preventDefault stops iOS from
-               treating two quick taps as a zoom gesture. The click listener
-               is kept for desktop, and skipped once touch has been seen. */
-            var usedTouch = false;
-            pad.addEventListener(
-              "touchstart",
-              function (e) {
-                var k = e.target && e.target.getAttribute("data-k");
-                if (!k) return;
-                usedTouch = true;
-                e.preventDefault();
-                padAction(k);
-              },
-              { passive: false }
-            );
-            pad.addEventListener("click", function (e) {
-              if (usedTouch) return;
-              padAction(e.target && e.target.getAttribute("data-k"));
-            });
-
-            function onKey(e) {
-              if (!running || !piece) return;
-              if (e.key === "ArrowLeft") mv(-1);
-              else if (e.key === "ArrowRight") mv(1);
-              else if (e.key === "ArrowUp") rotate();
-              else if (e.key === "ArrowDown") softDrop();
-              else return;
-              e.preventDefault();
-              draw();
-            }
-            window.addEventListener("keydown", onKey);
-
-            function draw() {
-              g.fillStyle = "#d6e0dc";
-              g.fillRect(0, 0, c.width, c.height);
-              g.strokeStyle = "rgba(15,34,51,0.07)";
-              for (var i = 1; i < COLS; i++) {
-                g.beginPath();
-                g.moveTo(i * CELL, 0);
-                g.lineTo(i * CELL, c.height);
-                g.stroke();
-              }
-              for (var r = 0; r < ROWS; r++)
-                for (var c2 = 0; c2 < COLS; c2++)
-                  if (board[r][c2]) {
-                    g.fillStyle = COLORS[board[r][c2]];
-                    g.fillRect(c2 * CELL, r * CELL, CELL - 1, CELL - 1);
-                  }
-              if (piece)
-                for (var pr = 0; pr < piece.m.length; pr++)
-                  for (var pc = 0; pc < piece.m[pr].length; pc++)
-                    if (piece.m[pr][pc]) {
-                      g.fillStyle = COLORS[piece.k];
-                      g.fillRect(
-                        (piece.x + pc) * CELL,
-                        (piece.y + pr) * CELL,
-                        CELL - 1,
-                        CELL - 1
-                      );
-                    }
-            }
-
-            spawn();
-            raf = requestAnimationFrame(function loop(ts) {
-              if (!running) return;
-              if (!last) last = ts;
-              acc += ts - last;
-              last = ts;
-              if (acc > 620) {
-                acc = 0;
-                softDrop();
-              }
-              draw();
-              raf = requestAnimationFrame(loop);
-            });
-
-            return function () {
-              running = false;
-              cancelAnimationFrame(raf);
-              window.removeEventListener("keydown", onKey);
-            };
-          }
-        };
-
-        /* =========================================================
-           VIEWS
-           ========================================================= */
-
-        function renderDevbar() {
-          var bar = document.getElementById("devbar");
-          if (!devOn()) {
-            bar.className = "";
-            bar.innerHTML = "";
-            return;
-          }
-          bar.className = "devbar";
-          bar.innerHTML =
-            "Test mode: location checks skipped \u00b7 " +
-            '<button id="devoff" type="button">turn off</button>';
-          document.getElementById("devoff").addEventListener("click", function () {
-            setDev(false);
-            renderDevbar();
-            route();
-          });
-        }
-
-        function ring(state, n) {
-          var stroke =
-            state === "done" ? "#a9761f" : state === "current" ? "#d8402a" : "#0f2233";
-          var dash = state === "locked" ? ' stroke-dasharray="3 5"' : "";
-          var inner =
-            state === "done"
-              ? '<circle cx="23" cy="23" r="12" fill="#a9761f" opacity="0.18"/>'
-              : "";
-          return (
-            '<div class="ring"><svg viewBox="0 0 46 46" aria-hidden="true">' +
-            inner +
-            '<circle cx="23" cy="23" r="21" fill="none" stroke="' +
-            stroke +
-            '" stroke-width="2"' +
-            dash +
-            '/></svg><span class="num" style="color:' +
-            stroke +
-            '">' +
-            n +
-            "</span></div>"
-          );
-        }
-
-        function renderChart() {
-          var cur = currentIndex();
-          var html =
-            '<main class="shell">' +
-            '<p class="eyebrow">Chart \u00b7 ' +
-            HUNT.stops.length +
-            " stops</p>" +
-            "<h1>" +
-            esc(HUNT.name) +
-            "</h1>" +
-            '<p class="sub">' +
-            esc(HUNT.subtitle || "") +
-            "</p>" +
-            '<div class="rule"></div><ol class="stops">';
-
-          HUNT.stops.forEach(function (s, i) {
-            var done = isDone(i),
-              isCur = i === cur;
-            var state = done ? "done" : isCur ? "current" : "locked";
-            var cls =
-              "stop " + (done ? "is-done" : isCur ? "is-current" : "is-locked");
-            var open = done || isCur;
-            var body =
-              ring(state, i + 1) +
-              '<div class="stop-body"><div class="stop-name">' +
-              (open ? esc(s.name) : "\u2014\u2014\u2014") +
-              '</div><div class="stop-meta">' +
-              (done ? "Found" : isCur ? "Go here now" : "Locked") +
-              (open ? " \u00b7 " + esc(s.game) + " \u00b7 " + s.radius + " m" : "") +
-              "</div>" +
-              (isCur && s.clue ? '<p class="stop-clue">' + esc(s.clue) + "</p>" : "") +
-              "</div>";
-            html +=
-              "<li>" +
-              (open
-                ? '<a class="' + cls + '" href="#/stop/' + i + '">' + body + "</a>"
-                : '<div class="' + cls + '">' + body + "</div>") +
-              "</li>";
-          });
-
-          html += "</ol><div style='margin-top:26px'>";
-          if (cur === -1) {
-            html +=
-              '<div class="status status--go">' + esc(HUNT.finale) + "</div>";
-          } else {
-            html +=
-              '<a class="btn btn--go" href="#/stop/' +
-              cur +
-              '">' +
-              (cur === 0 ? "Begin the hunt" : "Continue to stop " + (cur + 1)) +
-              "</a>";
-          }
-          var doneCount = load().done.length;
-          html +=
-            '</div><div class="foot"><span>' +
-            doneCount +
-            " of " +
-            HUNT.stops.length +
-            ' found</span><button id="resetBtn" type="button">Start over</button></div></main>';
-
-          app.innerHTML = html;
-          document.getElementById("resetBtn").addEventListener("click", function () {
-            if (confirm("Clear your progress and start from stop 1?")) {
-              resetAll();
-              route();
-            }
-          });
-        }
-
-        function renderStop(i) {
-          var stop = HUNT.stops[i];
-          if (!stop) return go("");
-
-          app.innerHTML =
-            '<main class="shell">' +
-            '<p class="eyebrow">Stop ' +
-            (i + 1) +
-            " of " +
-            HUNT.stops.length +
-            "</p><h1>" +
-            esc(stop.name) +
-            '</h1><p class="coord">' +
-            stop.lat.toFixed(5) +
-            "\u00b0N " +
-            stop.lng.toFixed(5) +
-            "\u00b0E \u00b7 within " +
-            stop.radius +
-            ' m</p><div class="rule"></div>' +
-            '<div class="status">' +
-            esc(stop.clue || "Find the marker.") +
-            "</div>" +
-            "<p style='font-size:15px;color:#1e4b6b;margin:18px 0 22px'>The marker only appears when you are close enough. Hold the phone up and turn slowly to find it.</p>" +
-            '<button class="btn btn--go" id="openCam" type="button">Open camera</button>' +
-            '<a class="btn btn--quiet" href="#/">Back to the chart</a>' +
-            "</main>";
-
-          var heading = null,
-            pos = null,
-            dist = null,
-            inRange = false,
-            t0 = Date.now(),
-            raf = null,
-            stream = null,
-            watchId = null;
-
-          if (devOn()) {
-            dist = 0;
-            inRange = true;
-          }
-
-          /* ----- compass -----
-             Android fires BOTH deviceorientationabsolute (true north) and
-             deviceorientation (alpha measured from wherever the page happened
-             to load). Feeding both into one variable makes the arrow alternate
-             between two unrelated headings every frame, which reads as
-             flicker. So: absolute wins, and the relative event is only used if
-             no absolute source ever appears.
-             iOS fires neither of those as absolute, but supplies
-             webkitCompassHeading, which is already true-north referenced. */
-
-          var hasAbsolute = false;
-          var smoothX = null,
-            smoothY = null;
-          var jitter = 0,
-            lastRaw = null;
-
-          /* Averaging degrees directly breaks across the 0/360 seam, so the
-             heading is smoothed as a unit vector and converted back. */
-          function pushHeading(deg) {
-            if (typeof deg !== "number" || isNaN(deg)) return;
-
-            if (lastRaw !== null) {
-              var d = Math.abs(angleDelta(lastRaw, deg));
-              jitter = jitter * 0.9 + d * 0.1;
-            }
-            lastRaw = deg;
-
-            var r = (deg * Math.PI) / 180;
-            var sx = Math.sin(r),
-              sy = Math.cos(r);
-            if (smoothX === null) {
-              smoothX = sx;
-              smoothY = sy;
-            } else {
-              var k = 0.18; // lower = steadier but laggier
-              smoothX += (sx - smoothX) * k;
-              smoothY += (sy - smoothY) * k;
-            }
-            heading = ((Math.atan2(smoothX, smoothY) * 180) / Math.PI + 360) % 360;
-          }
-
-          /* alpha is reported relative to the device's natural orientation,
-             so a landscape phone needs the screen angle subtracted. */
-          function screenAngle() {
-            if (screen.orientation && typeof screen.orientation.angle === "number")
-              return screen.orientation.angle;
-            if (typeof window.orientation === "number") return window.orientation;
-            return 0;
-          }
-
-          function onAbsolute(e) {
-            if (typeof e.alpha !== "number") return;
-            hasAbsolute = true;
-            pushHeading((360 - e.alpha + screenAngle()) % 360);
-          }
-
-          function onRelative(e) {
-            if (typeof e.webkitCompassHeading === "number") {
-              hasAbsolute = true;
-              pushHeading(e.webkitCompassHeading);
-              return;
-            }
-            // Only a fallback. If an absolute source exists, ignore this.
-            if (hasAbsolute) return;
-            if (e.absolute === true && typeof e.alpha === "number")
-              pushHeading((360 - e.alpha + screenAngle()) % 360);
-          }
-
-          function startOrientation() {
-            function attach() {
-              window.addEventListener("deviceorientationabsolute", onAbsolute, true);
-              window.addEventListener("deviceorientation", onRelative, true);
-            }
-            var DOE = window.DeviceOrientationEvent;
-            if (DOE && typeof DOE.requestPermission === "function")
-              DOE.requestPermission().then(attach).catch(attach);
-            else attach();
-          }
-
-          function startGeo() {
-            if (devOn() || !navigator.geolocation) return;
-            watchId = navigator.geolocation.watchPosition(
-              function (p) {
-                pos = {
-                  lat: p.coords.latitude,
-                  lng: p.coords.longitude,
-                  acc: p.coords.accuracy
-                };
-                dist = distance(pos.lat, pos.lng, stop.lat, stop.lng);
-                inRange = dist <= stop.radius;
-              },
-              function (err) {
-                readout.textContent =
-                  err.code === 1
-                    ? "Location blocked \u2014 allow it in Settings"
-                    : "Cannot read your location yet";
-              },
-              { enableHighAccuracy: true, maximumAge: 2000, timeout: 20000 }
-            );
-          }
-
-          function resize() {
-            var d = window.devicePixelRatio || 1;
-            cv.width = window.innerWidth * d;
-            cv.height = window.innerHeight * d;
-          }
-
-          function drawMarker(x, y, t, size) {
-            ctx.save();
-            ctx.translate(x, y + Math.sin(t / 700) * size * 0.06);
-            var gr = ctx.createRadialGradient(0, 0, size * 0.2, 0, 0, size * 1.3);
-            gr.addColorStop(0, "rgba(216,64,42,0.45)");
-            gr.addColorStop(1, "rgba(216,64,42,0)");
-            ctx.fillStyle = gr;
-            ctx.beginPath();
-            ctx.arc(0, 0, size * 1.3, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.save();
-            ctx.rotate(t / 2600);
-            ctx.strokeStyle = "#a9761f";
-            ctx.lineWidth = Math.max(2, size * 0.045);
-            ctx.beginPath();
-            ctx.arc(0, 0, size, 0, Math.PI * 2);
-            ctx.stroke();
-            for (var k = 0; k < 12; k++) {
-              var a = (k / 12) * Math.PI * 2;
-              ctx.beginPath();
-              ctx.moveTo(Math.cos(a) * size * 0.86, Math.sin(a) * size * 0.86);
-              ctx.lineTo(Math.cos(a) * size * 0.98, Math.sin(a) * size * 0.98);
-              ctx.stroke();
-            }
-            ctx.restore();
-            ctx.strokeStyle = "rgba(231,237,233,0.9)";
-            ctx.lineWidth = Math.max(1.5, size * 0.03);
-            ctx.beginPath();
-            ctx.moveTo(-size * 0.55, 0);
-            ctx.lineTo(size * 0.55, 0);
-            ctx.moveTo(0, -size * 0.55);
-            ctx.lineTo(0, size * 0.55);
-            ctx.stroke();
-            ctx.fillStyle = "#d8402a";
-            ctx.beginPath();
-            ctx.moveTo(0, -size * 0.34);
-            ctx.lineTo(size * 0.34, 0);
-            ctx.lineTo(0, size * 0.34);
-            ctx.lineTo(-size * 0.34, 0);
-            ctx.closePath();
-            ctx.fill();
-            ctx.restore();
-          }
-
-          function drawArrow(delta) {
-            var r = Math.min(cv.width, cv.height) * 0.16;
-            ctx.save();
-            ctx.translate(cv.width / 2, cv.height / 2);
-            ctx.rotate((delta * Math.PI) / 180);
-            ctx.fillStyle = "rgba(231,237,233,0.92)";
-            ctx.strokeStyle = "rgba(15,34,51,0.6)";
-            ctx.lineWidth = 3;
-            ctx.beginPath();
-            ctx.moveTo(0, -r);
-            ctx.lineTo(r * 0.6, r * 0.7);
-            ctx.lineTo(0, r * 0.35);
-            ctx.lineTo(-r * 0.6, r * 0.7);
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
-            ctx.restore();
-          }
-
-          function hud() {
-            /* A wildly noisy magnetometer usually means the phone needs the
-               figure-of-eight calibration wave, or is next to something
-               magnetic. Saying so beats letting people think it is broken. */
-            if (jitter > 12) {
-              readout.textContent =
-                "Compass unsteady \u00b7 wave the phone in a figure of eight";
-              return;
-            }
-            if (devOn()) readout.textContent = "Test mode \u00b7 marker unlocked";
-            else if (dist === null) readout.textContent = "Finding you\u2026";
-            else if (inRange) readout.textContent = "You are here \u00b7 " + fmt(dist);
-            else
-              readout.textContent =
-                fmt(dist) +
-                " to go" +
-                (pos && pos.acc > 25
-                  ? " \u00b7 weak GPS (\u00b1" + Math.round(pos.acc) + " m)"
-                  : "");
-            if (inRange && playBtn.disabled) {
-              playBtn.disabled = false;
-              playBtn.textContent = "Take the challenge";
-            } else if (!inRange && !playBtn.disabled) {
-              playBtn.disabled = true;
-              playBtn.textContent = "Get closer";
-            }
-          }
-
-          function loop() {
-            var t = Date.now() - t0;
-            ctx.clearRect(0, 0, cv.width, cv.height);
-            var vw = vid.videoWidth,
-              vh = vid.videoHeight;
-            if (vw && vh) {
-              var s = Math.max(cv.width / vw, cv.height / vh);
-              ctx.drawImage(
-                vid,
-                (cv.width - vw * s) / 2,
-                (cv.height - vh * s) / 2,
-                vw * s,
-                vh * s
-              );
-            }
-            if (inRange) {
-              var size = Math.min(cv.width, cv.height) * 0.17;
-              if (heading === null) drawMarker(cv.width / 2, cv.height * 0.45, t, size);
-              else {
-                var b = devOn()
-                  ? 0
-                  : bearing(pos.lat, pos.lng, stop.lat, stop.lng);
-                var d = angleDelta(heading, b),
-                  fov = 55;
-                if (Math.abs(d) < fov)
-                  drawMarker(
-                    cv.width / 2 + (d / fov) * (cv.width / 2),
-                    cv.height * 0.45,
-                    t,
-                    size
-                  );
-                else drawArrow(d);
-              }
-            } else if (heading !== null && pos) {
-              drawArrow(angleDelta(heading, bearing(pos.lat, pos.lng, stop.lat, stop.lng)));
-            }
-            hud();
-            raf = requestAnimationFrame(loop);
-          }
-
-          playBtn.onclick = function () {
-            go("#/game/" + i);
-          };
-          backBtn.onclick = function () {
-            go("#/");
-          };
-
-          document.getElementById("openCam").addEventListener("click", function () {
-            startOrientation();
-            startGeo();
-            navigator.mediaDevices
-              .getUserMedia({
-                video: { facingMode: { ideal: "environment" } },
-                audio: false
-              })
-              .then(function (st) {
-                stream = st;
-                vid.srcObject = st;
-                return vid.play();
-              })
-              .then(function () {
-                arEl.classList.add("is-live");
-                resize();
-                window.addEventListener("resize", resize);
-                raf = requestAnimationFrame(loop);
-              })
-              .catch(function () {
-                alert(
-                  "The camera did not open. Allow camera access for this site, then reload."
-                );
-              });
-          });
-
-          onLeave(function () {
-            if (raf) cancelAnimationFrame(raf);
-            window.removeEventListener("resize", resize);
-            window.removeEventListener("deviceorientationabsolute", onAbsolute, true);
-            window.removeEventListener("deviceorientation", onRelative, true);
-            if (watchId !== null) navigator.geolocation.clearWatch(watchId);
-            if (stream)
-              stream.getTracks().forEach(function (tr) {
-                tr.stop();
-              });
-            vid.srcObject = null;
-          });
-        }
-
-        function renderGame(i) {
-          var stop = HUNT.stops[i];
-          if (!stop) return go("");
-          var game = GAMES[stop.game];
-
-          if (!game) {
-            app.innerHTML =
-              '<main class="shell"><div class="status">No game called "' +
-              esc(stop.game) +
-              '" exists. In the config at the top of this file, game must be memory, breakout or tetris.</div>' +
-              '<a class="btn btn--quiet" href="#/" style="margin-top:20px">Back</a></main>';
-            return;
-          }
-
-          app.innerHTML =
-            '<header class="game-head"><span class="title">' +
-            esc(game.label) +
-            '</span><span class="score" id="score"></span></header>' +
-            '<div class="game-stage" id="stage"></div>';
-
-          var td = null;
-          var api = {
-            score: function (t) {
-              var el = document.getElementById("score");
-              if (el) el.textContent = t;
-            },
-            win: function () {
-              if (td) td();
-              complete(i);
-              showWin();
-            }
-          };
-          td = game.mount(document.getElementById("stage"), stop, api);
-          onLeave(function () {
-            if (td) td();
-          });
-
-          function showWin() {
-            var next = currentIndex();
-            var html = '<main class="shell">';
-            if (next === -1) {
-              html +=
-                '<p class="eyebrow">Hunt complete</p><h1>All three found</h1>' +
-                '<div class="rule"></div><div class="status status--go">' +
-                esc(HUNT.finale) +
-                '</div><div style="margin-top:24px"><a class="btn btn--go" href="#/">See the chart</a></div>';
-            } else {
-              var n = HUNT.stops[next];
-              html +=
-                '<p class="eyebrow">Stop ' +
-                (i + 1) +
-                ' cleared</p><h1>' +
-                esc(stop.name) +
-                '</h1><div class="rule"></div><div class="status status--go">Next: ' +
-                esc(n.clue || n.name) +
-                '</div><div style="margin-top:24px"><a class="btn btn--go" href="#/stop/' +
-                next +
-                '">Go to stop ' +
-                (next + 1) +
-                '</a><a class="btn btn--quiet" href="#/">Back to the chart</a></div>';
-            }
-            app.innerHTML = html + "</main>";
-          }
-        }
-
-        /* ---------- router ---------- */
-        function route() {
-          teardown();
-          window.scrollTo(0, 0);
-          renderDevbar();
-          var h = location.hash.replace(/^#\/?/, "");
-          var parts = h.split("/");
-          if (parts[0] === "stop") renderStop(parseInt(parts[1], 10) || 0);
-          else if (parts[0] === "game") renderGame(parseInt(parts[1], 10) || 0);
-          else renderChart();
-        }
-
-        window.addEventListener("hashchange", route);
-        route();
-      })();
-    </script>
-  </body>
+    }
+    ctx.strokeStyle = 'rgba(95,179,161,.5)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(roadX,0); ctx.lineTo(roadX,H); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(roadX+roadW,0); ctx.lineTo(roadX+roadW,H); ctx.stroke();
+
+    const car = (x,y,fill) => {
+      ctx.fillStyle = fill;
+      ctx.fillRect(x - carW/2, y, carW, carH);
+      ctx.fillStyle = 'rgba(14,21,24,.55)';
+      ctx.fillRect(x - carW*0.32, y + carH*0.16, carW*0.64, carH*0.26);
+      ctx.fillRect(x - carW*0.32, y + carH*0.62, carW*0.64, carH*0.2);
+    };
+    obs.forEach(o => car(roadX + laneW*(o.lane+.5), o.y, o.hue));
+    car(carX, carY, '#5FB3A1');
+
+    // progress bar
+    ctx.fillStyle = 'rgba(232,228,217,.14)'; ctx.fillRect(0, 0, W, 4);
+    ctx.fillStyle = '#5FB3A1'; ctx.fillRect(0, 0, W * Math.min(1, dist/GOAL), 4);
+  }
+  raf = requestAnimationFrame(loop);
+  return () => { alive = false; cancelAnimationFrame(raf); window.removeEventListener('keydown', onKey); };
+}
+
+/* ============================================================
+   GAME 5 — TETRIS
+   next-piece preview + full restart on top-out
+   ============================================================ */
+function gameTetris(gw, stop, onWin){
+  const TARGET = stop.lines || 4;
+  const COLS = 10, ROWS = 18;
+
+  const SHAPES = {
+    I: [[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]],
+    J: [[1,0,0],[1,1,1],[0,0,0]],
+    L: [[0,0,1],[1,1,1],[0,0,0]],
+    O: [[1,1],[1,1]],
+    S: [[0,1,1],[1,1,0],[0,0,0]],
+    T: [[0,1,0],[1,1,1],[0,0,0]],
+    Z: [[1,1,0],[0,1,1],[0,0,0]]
+  };
+  const COLORS = { I:'#5FB3A1', J:'#7FA8C9', L:'#C9922F', O:'#E8E4D9', S:'#7FBF6E', T:'#B48CC9', Z:'#D96A5B' };
+  const KEYS = Object.keys(SHAPES);
+
+  const hud = el('div','ghud');
+  hud.appendChild(el('span',null,'Lines&nbsp;')); const lN = el('b','','0/'+TARGET); hud.appendChild(lN);
+  hud.appendChild(el('div','spacer'));
+  const nb = el('div','nextbox');
+  nb.appendChild(el('span',null,'Next'));
+  const nextCv = el('canvas'); nextCv.id = 'nextcv';
+  nb.appendChild(nextCv);
+  hud.appendChild(nb);
+  gw.appendChild(hud);
+
+  const stage = makeStage(gw);
+  const pad = el('div','pad');
+  const r1 = el('div','padrow'), r2 = el('div','padrow');
+  const kL = el('button','key','&#9664;'), kR = el('button','key','&#9654;'),
+        kD = el('button','key','&#9660;'), kS = el('button','key','&#8635;'),
+        kH = el('button','key wide','Hard drop');
+  r1.appendChild(kL); r1.appendChild(kD); r1.appendChild(kR); r1.appendChild(kS);
+  r2.appendChild(kH);
+  pad.appendChild(r1); pad.appendChild(r2);
+  gw.appendChild(pad);
+  gw.appendChild(el('div','arnote','Clear ' + TARGET + ' lines. If the stack reaches the top the board wipes and the whole game starts over.'));
+
+  const box = stageBox(stage, COLS/ROWS);
+  const W = box.w, H = box.h;
+  const cv = el('canvas'); stage.appendChild(cv);
+  const ctx  = fitCanvas(cv, W, H);
+  const nctx = fitCanvas(nextCv, 56, 40);
+  const cell = W / COLS;
+
+  let board, bag, cur, next, drop, acc, last, lines, raf = 0, alive = true;
+
+  function newBag(){ const b = KEYS.slice(); for (let i=b.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [b[i],b[j]]=[b[j],b[i]]; } return b; }
+  function pull(){ if (!bag.length) bag = newBag(); const k = bag.pop(); return { k, m: SHAPES[k].map(r=>r.slice()), x: Math.floor((COLS - SHAPES[k].length)/2), y: 0 }; }
+  function rotate(m){ return m[0].map((_,i)=> m.map(r=>r[i]).reverse()); }
+  function collides(p, mx, my, mat){
+    const m = mat || p.m;
+    for (let y=0;y<m.length;y++) for (let x=0;x<m[y].length;x++){
+      if (!m[y][x]) continue;
+      const bx = p.x + x + (mx||0), by = p.y + y + (my||0);
+      if (bx < 0 || bx >= COLS || by >= ROWS) return true;
+      if (by >= 0 && board[by][bx]) return true;
+    }
+    return false;
+  }
+
+  /* full restart — this is the top-out behaviour */
+  function resetAll(announce){
+    board = Array.from({length:ROWS}, ()=> Array(COLS).fill(null));
+    bag = newBag();
+    next = pull();
+    lines = 0; drop = 620; acc = 0; last = 0;
+    lN.textContent = '0/' + TARGET;
+    spawn(true);
+    if (announce) toast('Stack hit the top — starting over');
+  }
+
+  function spawn(silent){
+    cur = next; next = pull();
+    cur.x = Math.floor((COLS - cur.m.length)/2); cur.y = 0;
+    drawNext();
+    if (collides(cur, 0, 0)){
+      if (silent) return;      // shouldn't happen on a fresh board, but don't loop
+      resetAll(true);
+    }
+  }
+
+  function lock(){
+    cur.m.forEach((row,y)=> row.forEach((v,x)=>{
+      if (!v) return;
+      const by = cur.y + y, bx = cur.x + x;
+      if (by >= 0) board[by][bx] = COLORS[cur.k];
+    }));
+    let cleared = 0;
+    for (let y = ROWS-1; y >= 0; y--){
+      if (board[y].every(c=>c)){ board.splice(y,1); board.unshift(Array(COLS).fill(null)); cleared++; y++; }
+    }
+    if (cleared){
+      lines += cleared;
+      lN.textContent = Math.min(lines,TARGET) + '/' + TARGET;
+      drop = Math.max(190, 620 - lines*55);
+      if (lines >= TARGET){ alive = false; cancelAnimationFrame(raf); onWin(); return; }
+    }
+    spawn(false);
+  }
+
+  const step = () => { if (!collides(cur,0,1)) cur.y++; else lock(); };
+  const shift = d => { if (!collides(cur,d,0)) cur.x += d; };
+  const spin = () => {
+    const m = rotate(cur.m);
+    for (const kick of [0,-1,1,-2,2]){
+      if (!collides(cur, kick, 0, m)){ cur.m = m; cur.x += kick; return; }
+    }
+  };
+  const slam = () => { while (!collides(cur,0,1)) cur.y++; acc = drop; };
+
+  resetAll(false);
+
+  /* controls — touch-action:none + preventDefault stops Android double-tap zoom */
+  const un = [
+    holdKey(kL, ()=> shift(-1)),
+    holdKey(kR, ()=> shift(1)),
+    holdKey(kD, step, 120, 55)
+  ];
+  const tapSpin = e => { e.preventDefault(); spin(); };
+  kS.addEventListener('touchstart', tapSpin, {passive:false});
+  kS.addEventListener('click', tapSpin);
+  const tapSlam = e => { e.preventDefault(); slam(); };
+  kH.addEventListener('touchstart', tapSlam, {passive:false});
+  kH.addEventListener('click', tapSlam);
+
+  const onKey = e => {
+    const k = e.key;
+    if (k === 'ArrowLeft'){ e.preventDefault(); shift(-1); }
+    else if (k === 'ArrowRight'){ e.preventDefault(); shift(1); }
+    else if (k === 'ArrowDown'){ e.preventDefault(); step(); }
+    else if (k === 'ArrowUp'){ e.preventDefault(); spin(); }
+    else if (k === ' '){ e.preventDefault(); slam(); }
+  };
+  window.addEventListener('keydown', onKey);
+
+  function drawNext(){
+    nctx.fillStyle = '#14232A'; nctx.fillRect(0,0,56,40);
+    const m = next.m;
+    // trim empty rows/cols so the preview is centred
+    let minX=99,maxX=-1,minY=99,maxY=-1;
+    m.forEach((row,y)=> row.forEach((v,x)=>{ if(v){ minX=Math.min(minX,x);maxX=Math.max(maxX,x);minY=Math.min(minY,y);maxY=Math.max(maxY,y);} }));
+    const bw = maxX-minX+1, bh = maxY-minY+1;
+    const c = Math.min(48/bw, 32/bh, 9);
+    const ox = (56 - bw*c)/2, oy = (40 - bh*c)/2;
+    nctx.fillStyle = COLORS[next.k];
+    for (let y=minY;y<=maxY;y++) for (let x=minX;x<=maxX;x++){
+      if (m[y][x]) nctx.fillRect(ox+(x-minX)*c+.5, oy+(y-minY)*c+.5, c-1, c-1);
+    }
+  }
+
+  function loop(ts){
+    if (!alive) return;
+    raf = requestAnimationFrame(loop);
+    if (!last) last = ts;
+    acc += ts - last; last = ts;
+    while (acc >= drop){ acc -= drop; step(); if (!alive) return; }
+
+    ctx.fillStyle = '#14232A'; ctx.fillRect(0,0,W,H);
+    ctx.strokeStyle = 'rgba(51,71,78,.4)'; ctx.lineWidth = 1;
+    for (let x=1;x<COLS;x++){ ctx.beginPath(); ctx.moveTo(x*cell,0); ctx.lineTo(x*cell,H); ctx.stroke(); }
+    for (let y=1;y<ROWS;y++){ ctx.beginPath(); ctx.moveTo(0,y*cell); ctx.lineTo(W,y*cell); ctx.stroke(); }
+
+    board.forEach((row,y)=> row.forEach((c,x)=>{
+      if (!c) return;
+      ctx.fillStyle = c; ctx.fillRect(x*cell+1, y*cell+1, cell-2, cell-2);
+    }));
+
+    // ghost
+    let gy = cur.y; const save = cur.y;
+    while (!collides(cur,0,1)) cur.y++;
+    const ghostY = cur.y; cur.y = save; gy = ghostY;
+    ctx.globalAlpha = .18; ctx.fillStyle = COLORS[cur.k];
+    cur.m.forEach((row,y)=> row.forEach((v,x)=>{ if (v) ctx.fillRect((cur.x+x)*cell+1, (gy+y)*cell+1, cell-2, cell-2); }));
+    ctx.globalAlpha = 1;
+
+    ctx.fillStyle = COLORS[cur.k];
+    cur.m.forEach((row,y)=> row.forEach((v,x)=>{
+      if (v && cur.y + y >= 0) ctx.fillRect((cur.x+x)*cell+1, (cur.y+y)*cell+1, cell-2, cell-2);
+    }));
+  }
+  raf = requestAnimationFrame(loop);
+
+  return () => {
+    alive = false; cancelAnimationFrame(raf);
+    window.removeEventListener('keydown', onKey);
+    un.forEach(f=>f());
+  };
+}
+
+/* ---------- boot ---------- */
+document.addEventListener('gesturestart', e => e.preventDefault());   // iOS pinch-zoom
+route();
+</script>
+</body>
 </html>
