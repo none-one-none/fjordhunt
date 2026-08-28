@@ -189,6 +189,25 @@ canvas{ display:block; touch-action:none; }
 .mcard[data-up="1"] .face,
 .mcard[data-done="1"] .face{ visibility:visible; }
 
+/* ---------- practice ---------- */
+.trybox{ margin-top:34px; border-top:1px solid var(--edge); padding-top:24px; }
+.trybox h3{ font-family:"Oswald",sans-serif; font-weight:500; font-size:15px;
+  letter-spacing:.16em; text-transform:uppercase; margin:0 0 6px; }
+.trybox p{ color:var(--mute); font-size:13px; line-height:1.5; margin:0 0 14px; }
+.trylist{ display:grid; grid-template-columns:repeat(auto-fit,minmax(92px,1fr)); gap:8px; }
+.trykey{
+  padding:13px 6px; border:1px solid var(--edge); background:var(--river); border-radius:2px;
+  font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--bone); text-align:center;
+}
+.trykey:active{ border-color:var(--verd); color:var(--verd); }
+.trykey span{ display:block; font-size:9px; color:var(--mute); margin-top:4px; letter-spacing:.08em; }
+.pbanner{
+  font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--brass); border:1px dashed rgba(201,146,47,.5);
+  padding:7px 10px; border-radius:2px; margin-bottom:12px; text-align:center;
+}
+
 /* ---------- win ---------- */
 .win{ flex:1; display:flex; flex-direction:column; justify-content:center; padding:0 20px calc(30px + var(--pad-safe)); }
 .win h2{ font-family:"Oswald",sans-serif; font-weight:700; font-size:40px; text-transform:uppercase;
@@ -255,14 +274,14 @@ const HUNT = {
       lat: 59.9167688, lng: 10.6344642, radius: 30,
       clue: "Now turn upstream and go north, about 280 metres. Walk into the ground the nail works once filled.",
       game: "racer",
-      goal: 900
+      goal: 1500
     },
     {
       name: "The Old Falls",
       lat: 59.9187201, lng: 10.6312979, radius: 30,
       clue: "Last leg: northwest, 280 metres, still following the river. Listen for it before you see it.",
       game: "tetris",
-      lines: 3
+      lines: 7
     }
   ],
 
@@ -283,6 +302,8 @@ function loadState(){
 }
 function saveState(s){ try{ localStorage.setItem(SKEY, JSON.stringify(s)); }catch(e){} }
 let STATE = loadState();
+
+const GAME_NAMES = { memory:'Memory', breakout:'Breakout', snake:'Snake', racer:'Racer', tetris:'Tetris' };
 
 /* ---------- geo maths ---------- */
 const R_EARTH = 6371000;
@@ -358,7 +379,8 @@ function route(){
   const h = location.hash || '#/';
   let m;
   if ((m = h.match(/^#\/stop\/(\d+)/)))      viewStop(+m[1]);
-  else if ((m = h.match(/^#\/game\/(\d+)/))) viewGame(+m[1]);
+  else if ((m = h.match(/^#\/game\/(\d+)/))) viewGame(+m[1], false);
+  else if ((m = h.match(/^#\/try\/(\d+)/)))  viewGame(+m[1], true);
   else if (h === '#/done')                   viewDone();
   else                                       viewHome();
   window.scrollTo(0,0);
@@ -445,6 +467,20 @@ function viewHome(){
   }
   w.appendChild(actions);
 
+  const tb = el('div','trybox');
+  tb.appendChild(el('h3', null, 'Before you go'));
+  tb.appendChild(el('p', null, 'Try any of the five games from the sofa. ' +
+    'Practice runs need no GPS and count for nothing.'));
+  const tl = el('div','trylist');
+  HUNT.stops.forEach((st,i)=>{
+    const b = el('button','trykey',
+      (GAME_NAMES[st.game] || st.game) + '<span>Stop ' + (i+1) + '</span>');
+    b.addEventListener('click', ()=> go('#/try/' + (i+1)));
+    tl.appendChild(b);
+  });
+  tb.appendChild(tl);
+  w.appendChild(tb);
+
   scr.appendChild(w);
   app.appendChild(scr);
 }
@@ -489,6 +525,10 @@ function viewStop(n){
   begin.style.display = 'none';
   hud.appendChild(enable);
   hud.appendChild(begin);
+  const tryBtn = el('button','btn ghost','Practice this game');
+  tryBtn.style.marginTop = '10px'; tryBtn.style.padding = '11px'; tryBtn.style.fontSize = '13px';
+  tryBtn.addEventListener('click', ()=> go('#/try/' + n));
+  hud.appendChild(tryBtn);
   arw.appendChild(hud);
   scr.appendChild(arw);
   app.appendChild(scr);
@@ -754,28 +794,29 @@ function viewStop(n){
 /* ============================================================
    GAME SHELL
    ============================================================ */
-function viewGame(n){
+function viewGame(n, practice){
   const idx  = n - 1;
   const stop = HUNT.stops[idx];
   if (!stop) return go('#/');
 
   const scr = el('div','screen fixed'); scr.style.paddingBottom = '0';
   const bar = el('div','topbar');
-  const back = el('button','back','&#8592; Compass');
-  back.addEventListener('click', ()=> go('#/stop/' + n));
+  const back = el('button','back', practice ? '&#8592; Route' : '&#8592; Compass');
+  back.addEventListener('click', ()=> go(practice ? '#/' : '#/stop/' + n));
   bar.appendChild(back);
-  bar.appendChild(el('div','ttl', stop.name));
+  bar.appendChild(el('div','ttl', practice ? GAME_NAMES[stop.game] || 'Practice' : stop.name));
   bar.appendChild(el('div','back','&nbsp;'));
   scr.appendChild(bar);
 
   const gw = el('div','gamewrap');
+  if (practice) gw.appendChild(el('div','pbanner','Practice run — nothing is recorded'));
   scr.appendChild(gw);
   app.appendChild(scr);
 
   const onWin = () => {
-    if (STATE.cleared < n){ STATE.cleared = n; saveState(STATE); }
+    if (!practice && STATE.cleared < n){ STATE.cleared = n; saveState(STATE); }
     if (navigator.vibrate) navigator.vibrate([40,50,40,50,120]);
-    setTimeout(()=> renderWin(n), 420);
+    setTimeout(()=> renderWin(n, practice), 420);
   };
 
   const runners = { memory:gameMemory, breakout:gameBreakout, snake:gameSnake, racer:gameRacer, tetris:gameTetris };
@@ -783,9 +824,28 @@ function viewGame(n){
   teardown = run(gw, stop, onWin) || null;
 }
 
-function renderWin(n){
+function renderWin(n, practice){
   if (teardown){ try{ teardown(); }catch(e){} teardown = null; }
   app.innerHTML = '';
+
+  if (practice){
+    const st  = HUNT.stops[n-1];
+    const scr = el('div','screen');
+    const w   = el('div','win');
+    w.appendChild(el('div','eyebrow','Practice run'));
+    w.appendChild(el('h2', null, 'Cleared'));
+    w.appendChild(el('p', null, 'Nothing recorded. The real ' + (GAME_NAMES[st.game]||'run') +
+      ' is waiting at <b>' + st.name + '</b> — you have to be standing there to start it.'));
+    const again = el('button','btn','Run it again');
+    again.addEventListener('click', ()=> route());
+    w.appendChild(again);
+    const home = el('button','btn ghost','Back to route'); home.style.marginTop = '10px';
+    home.addEventListener('click', ()=> go('#/'));
+    w.appendChild(home);
+    scr.appendChild(w); app.appendChild(scr);
+    return;
+  }
+
   const last = n >= HUNT.stops.length;
   const scr = el('div','screen');
   const w = el('div','win');
@@ -1120,13 +1180,15 @@ function gameSnake(gw, stop, onWin){
    GAME 4 — RACER (dodge the traffic)
    ============================================================ */
 function gameRacer(gw, stop, onWin){
-  const GOAL = stop.goal || 900;
-  const LANES = 3;
+  const GOAL_M   = stop.goal || 1500;   // metres of clean road to finish the leg
+  const PX_PER_M = 10;
+  const TOTAL    = GOAL_M * PX_PER_M;
+  const LANES    = 3;
 
   const hud = el('div','ghud');
-  hud.appendChild(el('span',null,'Distance&nbsp;')); const dN = el('b','','0%'); hud.appendChild(dN);
+  hud.appendChild(el('span',null,'Distance&nbsp;')); const dN = el('b','','0 m'); hud.appendChild(dN);
   hud.appendChild(el('div','spacer'));
-  hud.appendChild(el('span',null,'Speed&nbsp;')); const spN = el('b','','1.0x'); hud.appendChild(spN);
+  hud.appendChild(el('span',null,'Shields&nbsp;')); const sN = el('b','','3'); hud.appendChild(sN);
   gw.appendChild(hud);
 
   const stage = makeStage(gw);
@@ -1135,109 +1197,143 @@ function gameRacer(gw, stop, onWin){
   const lf = el('button','key','&#9664;'), rt = el('button','key','&#9654;');
   row.appendChild(lf); row.appendChild(rt);
   pad.appendChild(row); gw.appendChild(pad);
-  gw.appendChild(el('div','arnote','Tap a side of the road or use the arrows. Hit anything and you restart the leg.'));
+  gw.appendChild(el('div','arnote',
+    'Touch or drag on the road to steer into a lane, or use the arrows. ' +
+    'Three shields. Lose them all and the whole leg restarts.'));
 
   const box = stageBox(stage, 3/5);
   const W = box.w, H = box.h;
   const cv = el('canvas'); stage.appendChild(cv);
   const ctx = fitCanvas(cv, W, H);
-  const roadW = W * 0.82, roadX = (W - roadW)/2, laneW = roadW / LANES;
-  const carW = laneW * 0.56, carH = carW * 1.7;
 
-  let lane, carX, obs, dist, speed, stripe, last, raf = 0, alive = true, spawnGap, sinceSpawn;
-  function reset(soft){
-    lane = 1; carX = roadX + laneW*1.5; obs = []; dist = 0;
-    speed = 0.22; stripe = 0; spawnGap = 900; sinceSpawn = 0; last = 0;
-    dN.textContent = '0%'; spN.textContent = '1.0x';
+  const roadW = W * 0.86, roadX = (W - roadW)/2, laneW = roadW / LANES;
+  const carW  = laneW * 0.60, carH = carW * 1.6;
+  const carY  = H - carH - 14;
+
+  let lane, carX, obs, travelled, vpx, stripe, shields, invuln, nextSpawnAt, freeLane, last, raf = 0, alive = true;
+
+  function reset(){
+    lane = 1; carX = roadX + laneW*1.5;
+    obs = []; travelled = 0; vpx = 0.30; stripe = 0;
+    shields = 3; invuln = 0; freeLane = 1;
+    nextSpawnAt = H * 0.6;              // first row is already a little way ahead
+    last = 0;
+    sN.textContent = '3'; dN.textContent = '0 m';
   }
   reset();
 
-  const move = d => { lane = Math.max(0, Math.min(LANES-1, lane + d)); };
+  /* --- spawning ---------------------------------------------------------
+     Rows are placed by distance travelled, not by clock, so density stays
+     honest as the speed climbs. The free lane only ever shifts by one lane
+     between rows, so every row is reachable with a single move. */
+  function spawnRow(){
+    freeLane = Math.max(0, Math.min(LANES-1, freeLane + (Math.floor(Math.random()*3) - 1)));
+    const others = [];
+    for (let i=0;i<LANES;i++) if (i !== freeLane) others.push(i);
+    const count = Math.random() < 0.45 ? 2 : 1;
+    if (count === 1) others.splice(Math.floor(Math.random()*others.length), 1);
+    others.forEach(l => obs.push({
+      lane: l, y: -carH, hit: false,
+      hue: Math.random() < 0.5 ? '#C9922F' : '#D96A5B'
+    }));
+  }
+
+  /* --- steering --------------------------------------------------------- */
+  const setLane = l => { lane = Math.max(0, Math.min(LANES-1, l)); };
+  const move    = d => setLane(lane + d);
+  const laneAt  = clientX => {
+    const r = cv.getBoundingClientRect();
+    return Math.floor((clientX - r.left - roadX) / laneW);
+  };
+  const onTouch = e => { e.preventDefault(); setLane(laneAt(e.touches[0].clientX)); };
+  cv.addEventListener('touchstart', onTouch, {passive:false});
+  cv.addEventListener('touchmove',  onTouch, {passive:false});
+  cv.addEventListener('mousedown', e => setLane(laneAt(e.clientX)));
+  cv.addEventListener('mousemove', e => { if (e.buttons) setLane(laneAt(e.clientX)); });
 
   [[lf,-1],[rt,1]].forEach(([n,d])=>{
     const h = e => { e.preventDefault(); move(d); };
     n.addEventListener('touchstart', h, {passive:false});
     n.addEventListener('click', h);
   });
-  cv.addEventListener('touchstart', e=>{
-    e.preventDefault();
-    const r = cv.getBoundingClientRect();
-    move(e.touches[0].clientX - r.left < W/2 ? -1 : 1);
-  }, {passive:false});
   const onKey = e => {
     if (e.key === 'ArrowLeft'){ e.preventDefault(); move(-1); }
     if (e.key === 'ArrowRight'){ e.preventDefault(); move(1); }
   };
   window.addEventListener('keydown', onKey);
 
-  function spawn(){
-    // block one or two lanes, never all three
-    const free = Math.floor(Math.random()*LANES);
-    const two  = Math.random() < 0.35;
-    const blocked = [];
-    for (let i=0;i<LANES;i++) if (i !== free) blocked.push(i);
-    const pick = two ? blocked : [blocked[Math.floor(Math.random()*blocked.length)]];
-    pick.forEach(l => obs.push({ lane:l, y:-carH, hue: Math.random()<.5 ? '#C9922F' : '#D96A5B' }));
-  }
-
   function loop(ts){
     if (!alive) return;
     raf = requestAnimationFrame(loop);
     if (!last) last = ts;
-    let dt = Math.min(48, ts - last); last = ts;
+    const dt = Math.min(48, ts - last); last = ts;
 
-    const targetX = roadX + laneW*(lane + .5);
-    carX += (targetX - carX) * 0.24;
+    const prog = travelled / TOTAL;
+    vpx = 0.30 + prog * 0.42;                       // 0.30 -> 0.72 px/ms
+    const px = vpx * dt;
+    travelled += px;
+    stripe = (stripe + px) % 46;
 
-    const px = speed * dt;
-    dist += px; stripe = (stripe + px) % 44;
-    speed = Math.min(0.62, 0.22 + (dist/GOAL) * 0.4);
-    spawnGap = Math.max(360, 900 - (dist/GOAL) * 520);
-    sinceSpawn += dt;
-    if (sinceSpawn > spawnGap){ sinceSpawn = 0; spawn(); }
+    // gap between rows shrinks, but never below three-quarters of a screen
+    const gap = H * (1.05 - prog * 0.30);
+    if (travelled >= nextSpawnAt){ nextSpawnAt = travelled + gap; spawnRow(); }
 
-    obs.forEach(o => o.y += px * 1.6);
+    obs.forEach(o => o.y += px);
     obs = obs.filter(o => o.y < H + carH);
 
-    const carY = H - carH - 18;
-    for (const o of obs){
-      const ox = roadX + laneW*(o.lane + .5);
-      if (Math.abs(ox - carX) < carW*0.85 && o.y + carH > carY + 6 && o.y < carY + carH - 6){
-        toast('Crashed — leg restarts'); reset(); break;
+    // steer
+    carX += (roadX + laneW*(lane + 0.5) - carX) * 0.26;
+
+    // collide
+    if (invuln > 0) invuln -= dt;
+    else {
+      for (const o of obs){
+        if (o.hit) continue;
+        const ox = roadX + laneW*(o.lane + 0.5);
+        if (Math.abs(ox - carX) < carW*0.9 &&
+            o.y + carH > carY + 8 && o.y < carY + carH - 8){
+          o.hit = true; shields--; invuln = 1300;
+          sN.textContent = Math.max(0, shields);
+          if (navigator.vibrate) navigator.vibrate(80);
+          if (shields <= 0){ toast('Wrecked — leg restarts'); reset(); }
+          else toast('Clipped it — ' + shields + ' shield' + (shields>1?'s':'') + ' left');
+          break;
+        }
       }
     }
 
-    dN.textContent = Math.min(100, Math.round(dist/GOAL*100)) + '%';
-    spN.textContent = (speed/0.22).toFixed(1) + 'x';
-    if (dist >= GOAL){ alive = false; cancelAnimationFrame(raf); onWin(); return; }
+    dN.textContent = Math.round(Math.min(TOTAL, travelled) / PX_PER_M) + ' m';
+    if (travelled >= TOTAL){ alive = false; cancelAnimationFrame(raf); onWin(); return; }
 
-    /* draw */
+    /* --- draw --- */
     ctx.fillStyle = '#0E1518'; ctx.fillRect(0,0,W,H);
     ctx.fillStyle = '#14232A'; ctx.fillRect(roadX, 0, roadW, H);
-    ctx.strokeStyle = 'rgba(232,228,217,.28)'; ctx.lineWidth = 3;
+
+    ctx.strokeStyle = 'rgba(232,228,217,.26)'; ctx.lineWidth = 3;
     for (let l=1;l<LANES;l++){
       const x = roadX + laneW*l;
-      for (let y = -44 + stripe; y < H; y += 44){
-        ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y+22); ctx.stroke();
+      for (let y = -46 + stripe; y < H; y += 46){
+        ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x, y+24); ctx.stroke();
       }
     }
-    ctx.strokeStyle = 'rgba(95,179,161,.5)'; ctx.lineWidth = 2;
+    ctx.strokeStyle = 'rgba(95,179,161,.55)'; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(roadX,0); ctx.lineTo(roadX,H); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(roadX+roadW,0); ctx.lineTo(roadX+roadW,H); ctx.stroke();
 
-    const car = (x,y,fill) => {
+    const car = (x,y,fill,alpha) => {
+      ctx.globalAlpha = alpha == null ? 1 : alpha;
       ctx.fillStyle = fill;
       ctx.fillRect(x - carW/2, y, carW, carH);
       ctx.fillStyle = 'rgba(14,21,24,.55)';
-      ctx.fillRect(x - carW*0.32, y + carH*0.16, carW*0.64, carH*0.26);
-      ctx.fillRect(x - carW*0.32, y + carH*0.62, carW*0.64, carH*0.2);
+      ctx.fillRect(x - carW*0.32, y + carH*0.15, carW*0.64, carH*0.26);
+      ctx.fillRect(x - carW*0.32, y + carH*0.63, carW*0.64, carH*0.2);
+      ctx.globalAlpha = 1;
     };
-    obs.forEach(o => car(roadX + laneW*(o.lane+.5), o.y, o.hue));
-    car(carX, carY, '#5FB3A1');
+    obs.forEach(o => car(roadX + laneW*(o.lane+0.5), o.y, o.hit ? '#4A5A60' : o.hue));
+    car(carX, carY, '#5FB3A1', invuln > 0 ? (Math.floor(ts/90) % 2 ? 0.3 : 1) : 1);
 
-    // progress bar
-    ctx.fillStyle = 'rgba(232,228,217,.14)'; ctx.fillRect(0, 0, W, 4);
-    ctx.fillStyle = '#5FB3A1'; ctx.fillRect(0, 0, W * Math.min(1, dist/GOAL), 4);
+    ctx.fillStyle = 'rgba(232,228,217,.14)'; ctx.fillRect(0,0,W,4);
+    ctx.fillStyle = '#5FB3A1'; ctx.fillRect(0,0, W * Math.min(1, travelled/TOTAL), 4);
   }
   raf = requestAnimationFrame(loop);
   return () => { alive = false; cancelAnimationFrame(raf); window.removeEventListener('keydown', onKey); };
